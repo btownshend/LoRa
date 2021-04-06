@@ -57,11 +57,11 @@ lastsend=0
 SENDINTERVAL=5   # Time between transmits
 
 # Setup gpsd
-import gpsd
-gpsd.connect()
+import gps
+gpssession=gps.gps()
+gpssession.stream(gps.WATCH_ENABLE|gps.WATCH_NEWSTYLE)
 lastfix=0
 GPSINTERVAL=5
-print (gpsd.device())
 
 def receive():
     packet = rfm9x.receive()
@@ -75,10 +75,14 @@ def receive():
         
 def getgps():
     # Get GPS Fix if available and update our position
-    if time.time()-lastfix > GPSINTERVAL:
-        myloc=gpsd.get_current()
-        print(f"myloc={myloc}")
-        lastfix=time.time()
+    global lastfix
+    while time.time()-lastfix > GPSINTERVAL:
+        report=gpssession.next()
+	print(f"report={report}")
+        if report['class']=='TPV':
+            myloc=report
+            print(f"myloc={myloc}")
+            lastfix=time.time()
 
 def updatedisplay():
     display.fill(0)
@@ -86,13 +90,14 @@ def updatedisplay():
         display.text("RX: %s "%packet_text, 0, 0, 1)
         display.text("RSSI: %.0f   Last: %.0f s"%(rssi,time.time()-lastrcvd), 0, 0, 1)
     if myloc is not None:
-        display.text("Me: %.4f,%.4f"%(myloc.lat,myloc.long),0,10,1)
+	display.text("Me: %.4f,%.4f"%(myloc['lat,myloc.long),0,10,1)
     if rmtloc is not None:
         display.text("Rmt: %.4f,%.4f"%(rmtloc.lat,rmtloc.long),0,10,1)
     display.show()
     
 def send():
     # Send any messages as needed
+    global lastsend, pcntr
     if time.time()-lastsend<SENDINTERVAL:
         return
     if myloc is not None:
