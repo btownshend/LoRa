@@ -85,7 +85,7 @@ def getgps():
             print(f"myloc={myloc}")
             lastfix=time.time()
         else:
-            print(f"Ignoring report={report}")
+            print(f"Ignoring report={report['class']}")
 
 def updatedisplay():
     display.fill(0)
