@@ -86,13 +86,19 @@ def getgps():
 
 def updatedisplay():
     display.fill(0)
+    lines=[]
     if packet_text is not None:
-        display.text("RX: %s "%packet_text, 0, 0, 1)
-        display.text("RSSI: %.0f   Last: %.0f s"%(rssi,time.time()-lastrcvd), 0, 0, 1)
+        lines.append("RX: %s "%packet_text)
+        lines.append("RSSI: %.0f   Last: %.0f s"%(rssi,time.time()-lastrcvd),)
     if myloc is not None:
-	display.text("Me: %.4f,%.4f"%(myloc['lat,myloc.long),0,10,1)
+        lines.append("Me: %.4f,%.4f"%(myloc.lat,myloc.long))
     if rmtloc is not None:
-        display.text("Rmt: %.4f,%.4f"%(rmtloc.lat,rmtloc.long),0,10,1)
+        lines.append("Rmt: %.4f,%.4f"%(rmtloc.lat,rmtloc.long))
+
+    vpos=0
+    for l in lines:
+        display.text(l,0,vpos,1)
+        vpos+=10
     display.show()
     
 def send():
