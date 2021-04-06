@@ -52,6 +52,7 @@ packet_text = None
 lastrcvd=None
 pcntr=0
 myloc=None
+rmtloc=None
 rssi=None
 lastsend=0
 SENDINTERVAL=5   # Time between transmits
@@ -64,6 +65,7 @@ lastfix=0
 GPSINTERVAL=5
 
 def receive():
+    global packet_text, rssi, lastrcvd
     packet = rfm9x.receive()
     if packet is not None:
         # Display the packet text and rssi
@@ -75,14 +77,15 @@ def receive():
         
 def getgps():
     # Get GPS Fix if available and update our position
-    global lastfix
+    global lastfix, myloc
     while time.time()-lastfix > GPSINTERVAL:
         report=gpssession.next()
-	print(f"report={report}")
         if report['class']=='TPV':
             myloc=report
             print(f"myloc={myloc}")
             lastfix=time.time()
+        else:
+            print(f"Ignoring report={report}")
 
 def updatedisplay():
     display.fill(0)
@@ -91,12 +94,13 @@ def updatedisplay():
         lines.append("RX: %s "%packet_text)
         lines.append("RSSI: %.0f   Last: %.0f s"%(rssi,time.time()-lastrcvd),)
     if myloc is not None:
-        lines.append("Me: %.4f,%.4f"%(myloc.lat,myloc.long))
+        lines.append("Me: %.6f,%.6f"%(myloc['lat'],myloc['lon']))
     if rmtloc is not None:
-        lines.append("Rmt: %.4f,%.4f"%(rmtloc.lat,rmtloc.long))
+        lines.append("Rmt: %.6f,%.6f"%(rmtloc['lat'],rmtloc['lon']))
 
     vpos=0
     for l in lines:
+        print(l)
         display.text(l,0,vpos,1)
         vpos+=10
     display.show()
@@ -107,7 +111,7 @@ def send():
     if time.time()-lastsend<SENDINTERVAL:
         return
     if myloc is not None:
-        msg=f"{pcntr} {myloc.lat},{myloc.long}"
+        msg=f"{pcntr} {myloc['lat']},{myloc['lon']}"
     else:
         msg=f"{pcntr} No fix"
     packet=bytes(msg,"utf-8")
@@ -119,7 +123,5 @@ while True:
     receive()
     getgps()
     send()
+    updatedisplay()
     time.sleep(1)
-
-
-
