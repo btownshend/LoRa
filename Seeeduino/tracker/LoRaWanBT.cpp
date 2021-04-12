@@ -28,8 +28,7 @@
   THE SOFTWARE.1  USA
 */
 
-#include "LoRaWan.h"
-
+#include "LoRaWanBT.h"
 #include <assert.h>
 
 LoRaWanClass::LoRaWanClass(void)
@@ -747,6 +746,8 @@ void LoRaWanClass::loraDebugPrint(unsigned char timeout)
 void LoRaWanClass::sendCommand(char *command)
 {
   SerialLoRa.print(command);
+  SerialUSB.print("SEND:");
+  SerialUSB.print(command);
 }
 
 short LoRaWanClass::readBuffer(char *buffer, short length, unsigned char timeout)
@@ -780,6 +781,8 @@ bool LoRaWanClass::waitForResponse(char* response, unsigned char timeout)
   short sum = 0;
   unsigned long timerStart, timerEnd;
 
+  SerialUSB.print("waitFor ");
+  SerialUSB.println(response);
   timerStart = millis();
 
   while (1)
