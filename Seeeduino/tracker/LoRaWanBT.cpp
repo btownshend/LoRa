@@ -30,6 +30,7 @@
 
 #include "LoRaWan.h"
 
+#include <assert.h>
 
 LoRaWanClass::LoRaWanClass(void)
 {
@@ -620,37 +621,30 @@ void LoRaWanClass::initP2PMode(unsigned short frequency, _spreading_factor_t spr
 bool LoRaWanClass::transferPacketP2PMode(char *buffer, unsigned char timeout)
 {
   unsigned char length = strlen(buffer);
-
-  sendCommand("AT+TEST=TXLRSTR,\"");
-  for (unsigned char i = 0; i < length; i ++)SerialLoRa.write(buffer[i]);
-  sendCommand("\"\r\n");
-
-  // memset(_buffer, 0, BEFFER_LENGTH_MAX);
-  // readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
-
-  // if(strstr(_buffer, "+TEST: TX DONE"))return true;
-  // return false;
+  assert(length<=100);
+  char cmd[120];
+  sprintf(cmd,"AT+TEST=TXLRSTR,\"%s\"\r\n",buffer);
+  sendCommand(cmd);
 
   return waitForResponse("+TEST: TX DONE", timeout);
 }
 
 bool LoRaWanClass::transferPacketP2PMode(unsigned char *buffer, unsigned char length, unsigned char timeout)
 {
-  char temp[2] = {0};
+  char cmd[120];
+  char temp[3];
 
-  sendCommand("AT+TEST=TXLRPKT,\"");
+  assert(length<=100);
+  sprintf(cmd,"AT+TEST=TXLRPKT,\"");
   for (unsigned char i = 0; i < length; i ++)
   {
+    if (i>0)
+      strcat(cmd," ");
     sprintf(temp, "%02x", buffer[i]);
-    SerialLoRa.write(temp);
+    strcat(cmd,temp);
   }
-  sendCommand("\"\r\n");
-
-  // memset(_buffer, 0, BEFFER_LENGTH_MAX);
-  // readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
-
-  // if(strstr(_buffer, "+TEST: TX DONE"))return true;
-  // return false;
+  strcat(cmd,"\"\r\n");
+  sendCommand(cmd);
 
   return waitForResponse("+TEST: TX DONE", timeout);
 }
