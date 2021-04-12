@@ -1,2 +1,8 @@
 
-.#tracker1.py
+.#*
+Artwork/*
+Photos/*
+.DS_Store
+Seeeduino/Base/compassrose.psd
+Seeeduino/Base/Base.stl
+Seeeduino/Base/Base2.stl
