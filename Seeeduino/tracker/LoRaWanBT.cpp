@@ -620,9 +620,9 @@ void LoRaWanClass::initP2PMode(unsigned short frequency, _spreading_factor_t spr
 bool LoRaWanClass::transferPacketP2PMode(char *buffer, unsigned char timeout)
 {
   unsigned char length = strlen(buffer);
-  assert(length<=100);
+  assert(length <= 100);
   char cmd[120];
-  sprintf(cmd,"AT+TEST=TXLRSTR,\"%s\"\r\n",buffer);
+  sprintf(cmd, "AT+TEST=TXLRSTR,\"%s\"\r\n", buffer);
   sendCommand(cmd);
 
   return waitForResponse("+TEST: TX DONE", timeout);
@@ -633,16 +633,16 @@ bool LoRaWanClass::transferPacketP2PMode(unsigned char *buffer, unsigned char le
   char cmd[120];
   char temp[3];
 
-  assert(length<=100);
-  sprintf(cmd,"AT+TEST=TXLRPKT,\"");
+  assert(length <= 100);
+  sprintf(cmd, "AT+TEST=TXLRPKT,\"");
   for (unsigned char i = 0; i < length; i ++)
   {
-    if (i>0)
-      strcat(cmd," ");
+    if (i > 0)
+      strcat(cmd, " ");
     sprintf(temp, "%02x", buffer[i]);
-    strcat(cmd,temp);
+    strcat(cmd, temp);
   }
-  strcat(cmd,"\"\r\n");
+  strcat(cmd, "\"\r\n");
   sendCommand(cmd);
 
   return waitForResponse("+TEST: TX DONE", timeout);
@@ -757,15 +757,13 @@ short LoRaWanClass::readBuffer(char *buffer, short length, unsigned char timeout
 
   timerStart = millis();
 
-  while (1)
+  while (i < length)
   {
-    if (i < length)
+
+    while (i < length && SerialLoRa.available())
     {
-      while (SerialLoRa.available())
-      {
-        char c = SerialLoRa.read();
-        buffer[i ++] = c;
-      }
+      char c = SerialLoRa.read();
+      buffer[i ++] = c;
     }
 
     timerEnd = millis();
@@ -820,22 +818,29 @@ bool LoRaWanClass::waitForResponse(char* response, unsigned char timeout)
   short sum = 0;
   unsigned long timerStart, timerEnd;
 
-  SerialUSB.print("waitFor ");
-  SerialUSB.println(response);
+  SerialUSB.print("waitFor: <");
+  SerialUSB.print(response);
+  SerialUSB.println(">");
   timerStart = millis();
 
-  while (1)
-  {
-    if (SerialLoRa.available())
-    {
-      char c = SerialLoRa.read();
-
-      sum = (c == response[sum]) ? sum + 1 : 0;
-      if (sum == len)break;
-    }
+  char buffer[100];
+  while (1) {
+    int fullLine = readLine(buffer, sizeof(buffer), timeout - (millis() - timerStart) / 1000);
+    if (fullLine && (strcmp(buffer, response) == 0))
+      break;
+//    SerialUSB.print("buffer  : "); SerialUSB.println(buffer);
+//    SerialUSB.print("response: "); SerialUSB.println(response);
+//    for (int i = 0; buffer[i]; i++)
+//      if (buffer[i] != response[i]) {
+//        char tmp[50];
+//        sprintf(tmp, "%d: %02x != %02x", i, buffer[i], response[i]);
+//        SerialUSB.println(tmp);
+//        break;
+//      }
 
     timerEnd = millis();
-    if (timerEnd - timerStart > 1000 * timeout)return false;
+    if (timerEnd - timerStart > 1000 * timeout)
+      return false;
   }
 
   return true;
