@@ -489,9 +489,9 @@ class LoRaWanClass
     short getBatteryVoltage(void);
 
 
-  private:
     void sendCommand(char *command);
     short readBuffer(char* buffer, short length, unsigned char timeout = DEFAULT_TIMEOUT);
+    short readLine(char *buffer, short length, unsigned char timeout=DEFAULT_TIMEOUT);
     bool waitForResponse(char* response, unsigned char timeout = DEFAULT_TIMEOUT);
     bool sendCommandAndWaitForResponse(char* command, char *response, unsigned char timeout = DEFAULT_TIMEOUT);
 

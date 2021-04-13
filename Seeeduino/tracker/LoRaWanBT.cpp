@@ -775,6 +775,45 @@ short LoRaWanClass::readBuffer(char *buffer, short length, unsigned char timeout
   return i;
 }
 
+// Read from LoRa up to a newline char or up to length bytes
+// Abort after timeout seconds
+// Return 1 if a full line was read, 0 otherwise
+// Buffer will be null-terminated
+short LoRaWanClass::readLine(char *buffer, short length, unsigned char timeout)
+{
+  short i = 0;
+  unsigned long timerStart, timerEnd;
+
+  length--; // Leave room for null
+  timerStart = millis();
+  bool hiteol = false;
+
+  while (1) {
+    while (SerialLoRa.available() && i < length) {
+      char c = SerialLoRa.read();
+      if (c == '\n' || c == '\r') {
+        if (c=='\n' && i > 0) {
+          hiteol = true;
+          break;
+        }
+      } else
+        buffer[i ++] = c;
+    }
+    if (i == length || hiteol)
+      break;
+    delay(10);
+    timerEnd = millis();
+    if (timerEnd - timerStart > 1000 * timeout)break;
+  }
+  buffer[i] = 0;
+  SerialUSB.print("readLine: <");
+  if (!hiteol)
+    SerialUSB.print("Timeout> <");
+  SerialUSB.print(buffer);
+  SerialUSB.println(">");
+  return hiteol;
+}
+
 bool LoRaWanClass::waitForResponse(char* response, unsigned char timeout)
 {
   short len = strlen(response);
