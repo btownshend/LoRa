@@ -15,6 +15,8 @@ import adafruit_ssd1306
 # Import RFM9x
 import adafruit_rfm9x
 
+myid=5
+
 # Button A
 btnA = DigitalInOut(board.D5)
 btnA.direction = Direction.INPUT
@@ -48,11 +50,12 @@ RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0)
 rfm9x.tx_power = 23
-packet_text = None
 lastrcvd=None
 pcntr=0
 myloc=None
 rmtloc=None
+rmtid=None
+rmtcntr=None
 rssi=None
 lastsend=0
 SENDINTERVAL=5   # Time between transmits
@@ -65,13 +68,12 @@ lastfix=0
 GPSINTERVAL=5
 
 def receive():
-    global packet_text, rssi, lastrcvd
+    global rmtloc rmtid, rmtcnt, rssi, lastrcvd
     packet = rfm9x.receive()
     if packet is not None:
-        # Display the packet text and rssi
-        display.fill(0)
-        prev_packet = packet
-        packet_text = str(prev_packet, "utf-8")
+        [rmtid,rmtcntr,lat,lon]=struct.unpack('BHff',packet)
+        rmtloc['lat']=lat
+        rmtloc['lon']=lon
         rssi=rfm9x.last_rssi
         lastrcvd=time.time()
         
@@ -91,12 +93,11 @@ def updatedisplay():
     display.fill(0)
     lines=[]
     if packet_text is not None:
-        lines.append("RX: %s "%packet_text)
-        lines.append("RSSI: %.0f   Last: %.0f s"%(rssi,time.time()-lastrcvd),)
+        lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd}s")
     if myloc is not None:
-        lines.append("Me: %.6f,%.6f"%(myloc['lat'],myloc['lon']))
+        lines.append("{myid}: %.6f,%.6f"%(myloc['lat'],myloc['lon']))
     if rmtloc is not None:
-        lines.append("Rmt: %.6f,%.6f"%(rmtloc['lat'],rmtloc['lon']))
+        lines.append("{rmtid}: %.6f,%.6f"%(rmtloc['lat'],rmtloc['lon']))
 
     vpos=0
     for l in lines:
@@ -107,14 +108,13 @@ def updatedisplay():
     
 def send():
     # Send any messages as needed
-    global lastsend, pcntr
+    global lastsend, myid, myloc, pcntr
     if time.time()-lastsend<SENDINTERVAL:
         return
     if myloc is not None:
-        msg=f"{pcntr} {myloc['lat']},{myloc['lon']}"
-    else:
-        msg=f"{pcntr} No fix"
-    packet=bytes(msg,"utf-8")
+        packet=struct.pack('BHff',myid,pcntr,0.0,0.0)
+    else
+        packet=struct.pack('BHff',myid,pcntr,myloc['lat'],myloc['lon'])
     rfm9x.send(packet)
     pcntr+=1
     lastsend=time.time()
