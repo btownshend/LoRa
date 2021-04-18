@@ -110,13 +110,13 @@ def updatedisplay():
     if len(lines)==3:
         d=distance((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
         b=bearing((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
-        lines.append(f"d={d},b={b}")
+        lines.append(f"d={d:.1f},b={b:.0f}")
     vpos=0
     display.fill(0)
     for l in lines:
         print(l)
         display.text(l,0,vpos,1)
-        vpos+=10
+        vpos+=8
     display.show()
     
 def send():
