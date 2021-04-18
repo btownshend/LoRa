@@ -128,10 +128,13 @@ def send():
         packet=struct.pack('BHddf',myid,pcntr,0.0,0.0,0.0)
     else:
         packet=struct.pack('BHddf',myid,pcntr,myloc['lat'],myloc['lon'],time.time()-lastfix)
-    rfm9x.send(packet)
-    pcntr+=1
-    lastsend=time.time()
-    
+    if not rfm9x.send(packet):
+        print("Failed send")
+    else:
+        pcntr+=1
+        lastsend=time.time()
+        print('send')
+
 while True:
     receive()
     getgps()
