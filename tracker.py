@@ -117,7 +117,7 @@ def send():
     global lastsend, myid, myloc, pcntr
     if time.time()-lastsend<SENDINTERVAL:
         return
-    if myloc is not None:
+    if myloc is None:
         packet=struct.pack('BHff',myid,pcntr,0.0,0.0)
     else:
         packet=struct.pack('BHff',myid,pcntr,myloc['lat'],myloc['lon'])
