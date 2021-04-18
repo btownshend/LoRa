@@ -102,11 +102,11 @@ def getgps():
 
 def updatedisplay():
     lines=[]
-    lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd:.1f}s")
+    lines.append(f"ID:{rmtid},{rssi}dBm,{time.time()-lastrcvd:.1f}s")
     if myloc is not None and 'lat' in myloc:
-        lines.append(f"{myid}: {myloc['lat']:.6f},{myloc['lon']:.6f},{time.time()-lastfix:.1f}")
+        lines.append(f"{myid}: {myloc['lat']:.5f},{myloc['lon']:.5f},{time.time()-lastfix:.1f}")
     if rmtloc is not None and 'lat' in rmtloc:
-        lines.append(f"{rmtid}: {rmtloc['lat']:.6f},{rmtloc['lon']:.6f},{time.time()-lastrcvd+rmtloc['last']:.1f}")
+        lines.append(f"{rmtid}: {rmtloc['lat']:.5f},{rmtloc['lon']:.5f},{time.time()-lastrcvd+rmtloc['last']:.1f}")
     if len(lines)==3:
         d=distance((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
         b=bearing((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
