@@ -73,10 +73,11 @@ def receive():
     global rmtloc, rmtid, rmtcnt, rssi, lastrcvd
     packet = rfm9x.receive()
     if packet is not None:
-        if len(packet)==24:
-            [rmtid,rmtcntr,lat,lon]=struct.unpack('BHdd',packet)
+        if len(packet)==28:
+            [rmtid,rmtcntr,lat,lon,rmttime]=struct.unpack('BHddf',packet)
             rmtloc['lat']=lat
             rmtloc['lon']=lon
+            rmtloc['last']=rmttime
             rssi=rfm9x.last_rssi
             lastrcvd=time.time()
         else:
@@ -95,15 +96,15 @@ def getgps():
             lastfix=time.time()
         else:
             print(f"Ignoring report={report['class']}")
-    print(f"Time since last fix: {time.time()-lastfix}")
+    print(f"Time since last fix: {time.time()-lastfix:.1f}")
 
 def updatedisplay():
     lines=[]
-    lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd}s")
+    lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd:.1f}s")
     if myloc is not None and 'lat' in myloc:
-        lines.append(f"{myid}: %.6f,%.6f"%(myloc['lat'],myloc['lon']))
+        lines.append(f"{myid}: {myloc['lat']:.6f},{myloc['lon']:.6f},{time.time()-lastfix:.1f}")
     if rmtloc is not None and 'lat' in rmtloc:
-        lines.append(f"{rmtid}: %.6f,%.6f"%(rmtloc['lat'],rmtloc['lon']))
+        lines.append(f"{rmtid}: {rmtloc['lat']:.6f},{rmtloc['lon']:.6f}")
 
     vpos=0
     for l in lines:
@@ -118,9 +119,9 @@ def send():
     if time.time()-lastsend<SENDINTERVAL:
         return
     if myloc is None:
-        packet=struct.pack('BHdd',myid,pcntr,0.0,0.0)
+        packet=struct.pack('BHddf',myid,pcntr,0.0,0.0,0.0)
     else:
-        packet=struct.pack('BHdd',myid,pcntr,myloc['lat'],myloc['lon'])
+        packet=struct.pack('BHddf',myid,pcntr,myloc['lat'],myloc['lon'],time.time()-lastfix)
     rfm9x.send(packet)
     pcntr+=1
     lastsend=time.time()
