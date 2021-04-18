@@ -64,6 +64,8 @@ SENDINTERVAL=5   # Time between transmits
 
 # Setup gpsd
 import gps
+from geo.sphere import distance, bearing 
+
 gpssession=gps.gps()
 gpssession.stream(gps.WATCH_ENABLE|gps.WATCH_NEWSTYLE)
 lastfix=0
@@ -96,7 +98,7 @@ def getgps():
             lastfix=time.time()
         else:
             print(f"Ignoring report={report['class']}")
-    print(f"Time since last fix: {time.time()-lastfix:.1f}")
+    #print(f"Time since last fix: {time.time()-lastfix:.1f}")
 
 def updatedisplay():
     lines=[]
@@ -104,8 +106,11 @@ def updatedisplay():
     if myloc is not None and 'lat' in myloc:
         lines.append(f"{myid}: {myloc['lat']:.6f},{myloc['lon']:.6f},{time.time()-lastfix:.1f}")
     if rmtloc is not None and 'lat' in rmtloc:
-        lines.append(f"{rmtid}: {rmtloc['lat']:.6f},{rmtloc['lon']:.6f}")
-
+        lines.append(f"{rmtid}: {rmtloc['lat']:.6f},{rmtloc['lon']:.6f},{time.time()-lastrcvd+rmtloc['last']:.1f}")
+    if len(lines)==3:
+        d=distance((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
+        b=bearing((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
+        lines.append(f"d={d},b={b}")
     vpos=0
     for l in lines:
         print(l)
