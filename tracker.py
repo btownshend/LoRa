@@ -14,6 +14,7 @@ import board
 import adafruit_ssd1306
 # Import RFM9x
 import adafruit_rfm9x
+import struct
 
 myid=5
 
@@ -50,7 +51,7 @@ RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0)
 rfm9x.tx_power = 23
-lastrcvd=None
+lastrcvd=0
 pcntr=0
 myloc=None
 rmtloc=None
@@ -92,12 +93,11 @@ def getgps():
 def updatedisplay():
     display.fill(0)
     lines=[]
-    if packet_text is not None:
-        lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd}s")
-    if myloc is not None and lat in myloc:
-        lines.append("{myid}: %.6f,%.6f"%(myloc['lat'],myloc['lon']))
-    if rmtloc is not None and lat in rmtloc:
-        lines.append("{rmtid}: %.6f,%.6f"%(rmtloc['lat'],rmtloc['lon']))
+    lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd}s")
+    if myloc is not None and 'lat' in myloc:
+        lines.append(f"{myid}: %.6f,%.6f"%(myloc['lat'],myloc['lon']))
+    if rmtloc is not None and 'lat' in rmtloc:
+        lines.append(f"{rmtid}: %.6f,%.6f"%(rmtloc['lat'],rmtloc['lon']))
 
     vpos=0
     for l in lines:
