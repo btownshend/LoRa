@@ -68,7 +68,7 @@ lastfix=0
 GPSINTERVAL=5
 
 def receive():
-    global rmtloc rmtid, rmtcnt, rssi, lastrcvd
+    global rmtloc, rmtid, rmtcnt, rssi, lastrcvd
     packet = rfm9x.receive()
     if packet is not None:
         [rmtid,rmtcntr,lat,lon]=struct.unpack('BHff',packet)
@@ -113,7 +113,7 @@ def send():
         return
     if myloc is not None:
         packet=struct.pack('BHff',myid,pcntr,0.0,0.0)
-    else
+    else:
         packet=struct.pack('BHff',myid,pcntr,myloc['lat'],myloc['lon'])
     rfm9x.send(packet)
     pcntr+=1
