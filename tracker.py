@@ -15,8 +15,9 @@ import adafruit_ssd1306
 # Import RFM9x
 import adafruit_rfm9x
 import struct
+import sys
 
-myid=5
+myid=int(sys.argv[1])
 
 # Button A
 btnA = DigitalInOut(board.D5)
@@ -54,7 +55,7 @@ rfm9x.tx_power = 23
 lastrcvd=0
 pcntr=0
 myloc=None
-rmtloc=None
+rmtloc={}
 rmtid=None
 rmtcntr=None
 rssi=None
