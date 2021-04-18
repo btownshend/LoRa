@@ -73,8 +73,8 @@ def receive():
     global rmtloc, rmtid, rmtcnt, rssi, lastrcvd
     packet = rfm9x.receive()
     if packet is not None:
-        if len(packet)==12:
-            [rmtid,rmtcntr,lat,lon]=struct.unpack('BHff',packet)
+        if len(packet)==24:
+            [rmtid,rmtcntr,lat,lon]=struct.unpack('BHdd',packet)
             rmtloc['lat']=lat
             rmtloc['lon']=lon
             rssi=rfm9x.last_rssi
@@ -88,14 +88,14 @@ def getgps():
     start=time.time()
     while time.time()-lastfix > GPSINTERVAL and time.time()-start < 2:
         report=gpssession.next()
+        print(f"report={report}")
         if report['class']=='TPV':
             myloc=report
             print(f"myloc={myloc}")
             lastfix=time.time()
         else:
             print(f"Ignoring report={report['class']}")
-    if lastfix<start:
-        print(f"No new fix")
+    print(f"Time since last fix: {time.time()-lastfix}")
 
 def updatedisplay():
     lines=[]
@@ -118,9 +118,9 @@ def send():
     if time.time()-lastsend<SENDINTERVAL:
         return
     if myloc is None:
-        packet=struct.pack('BHff',myid,pcntr,0.0,0.0)
+        packet=struct.pack('BHdd',myid,pcntr,0.0,0.0)
     else:
-        packet=struct.pack('BHff',myid,pcntr,myloc['lat'],myloc['lon'])
+        packet=struct.pack('BHdd',myid,pcntr,myloc['lat'],myloc['lon'])
     rfm9x.send(packet)
     pcntr+=1
     lastsend=time.time()
