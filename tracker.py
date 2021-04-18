@@ -108,8 +108,8 @@ def updatedisplay():
     if rmtloc is not None and 'lat' in rmtloc:
         lines.append(f"{rmtid}: {rmtloc['lat']:.5f},{rmtloc['lon']:.5f},{time.time()-lastrcvd+rmtloc['last']:.1f}")
     if len(lines)==3:
-        d=distance((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
-        b=bearing((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
+        d=distance((myloc['lon'],myloc['lat']),(rmtloc['lon'],rmtloc['lat']))
+        b=bearing((myloc['lon'],myloc['lat']),(rmtloc['lon'],rmtloc['lat']))
         lines.append(f"d={d:.1f},b={b:.0f}")
     vpos=0
     display.fill(0)
