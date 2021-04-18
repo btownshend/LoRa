@@ -94,9 +94,9 @@ def updatedisplay():
     lines=[]
     if packet_text is not None:
         lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd}s")
-    if myloc is not None:
+    if myloc is not None and lat in myloc:
         lines.append("{myid}: %.6f,%.6f"%(myloc['lat'],myloc['lon']))
-    if rmtloc is not None:
+    if rmtloc is not None and lat in rmtloc:
         lines.append("{rmtid}: %.6f,%.6f"%(rmtloc['lat'],rmtloc['lon']))
 
     vpos=0
