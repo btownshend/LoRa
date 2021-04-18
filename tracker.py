@@ -82,8 +82,10 @@ def receive():
             rmtloc['last']=rmttime
             rssi=rfm9x.last_rssi
             lastrcvd=time.time()
+            return True
         else:
             print(f"Bad packet length: {len(packet)}")
+    return False
         
 def getgps():
     # Get GPS Fix if available and update our position
@@ -122,8 +124,6 @@ def updatedisplay():
 def send():
     # Send any messages as needed
     global lastsend, myid, myloc, pcntr
-    if time.time()-lastsend<SENDINTERVAL:
-        return
     if myloc is None:
         packet=struct.pack('BHddf',myid,pcntr,0.0,0.0,0.0)
     else:
@@ -136,8 +136,8 @@ def send():
         print('send')
 
 while True:
-    receive()
+    rcvd=receive()
     getgps()
-    send()
+    if rcvd or time.time()-lastsend>SENDINTERVAL:
+        send()
     updatedisplay()
-    time.sleep(1+myid/10)
