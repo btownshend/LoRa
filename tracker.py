@@ -72,16 +72,20 @@ def receive():
     global rmtloc, rmtid, rmtcnt, rssi, lastrcvd
     packet = rfm9x.receive()
     if packet is not None:
-        [rmtid,rmtcntr,lat,lon]=struct.unpack('BHff',packet)
-        rmtloc['lat']=lat
-        rmtloc['lon']=lon
-        rssi=rfm9x.last_rssi
-        lastrcvd=time.time()
+        if len(packet)==12:
+            [rmtid,rmtcntr,lat,lon]=struct.unpack('BHff',packet)
+            rmtloc['lat']=lat
+            rmtloc['lon']=lon
+            rssi=rfm9x.last_rssi
+            lastrcvd=time.time()
+        else:
+            print(f"Bad packet length: {len(packet)}")
         
 def getgps():
     # Get GPS Fix if available and update our position
     global lastfix, myloc
-    while time.time()-lastfix > GPSINTERVAL:
+    start=time.time()
+    while time.time()-lastfix > GPSINTERVAL and time.time()-start < 2:
         report=gpssession.next()
         if report['class']=='TPV':
             myloc=report
@@ -89,9 +93,10 @@ def getgps():
             lastfix=time.time()
         else:
             print(f"Ignoring report={report['class']}")
+    if lastfix<start:
+        print(f"No new fix")
 
 def updatedisplay():
-    display.fill(0)
     lines=[]
     lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd}s")
     if myloc is not None and 'lat' in myloc:
