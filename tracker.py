@@ -112,6 +112,7 @@ def updatedisplay():
         b=bearing((myloc['lat'],myloc['lon']),(rmtloc['lat'],rmtloc['lon']))
         lines.append(f"d={d},b={b}")
     vpos=0
+    display.fill(0)
     for l in lines:
         print(l)
         display.text(l,0,vpos,1)
