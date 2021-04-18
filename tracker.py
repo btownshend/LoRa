@@ -60,7 +60,7 @@ rmtid=None
 rmtcntr=None
 rssi=None
 lastsend=0
-SENDINTERVAL=5   # Time between transmits
+SENDINTERVAL=1   # Time between transmits
 
 # Setup gpsd
 import gps
@@ -72,7 +72,7 @@ lastfix=0
 GPSINTERVAL=5
 
 def receive():
-    global rmtloc, rmtid, rmtcnt, rssi, lastrcvd
+    global rmtloc, rmtid, rmtcntr, rssi, lastrcvd
     packet = rfm9x.receive()
     if packet is not None:
         if len(packet)==28:
@@ -102,11 +102,11 @@ def getgps():
 
 def updatedisplay():
     lines=[]
-    lines.append(f"ID:{rmtid},{rssi}dBm,{time.time()-lastrcvd:.1f}s")
+    lines.append(f"{rmtcntr},{rssi}dBm,{time.time()-lastrcvd:.1f}s")
     if myloc is not None and 'lat' in myloc:
-        lines.append(f"{myid}: {myloc['lat']:.5f},{myloc['lon']:.5f},{time.time()-lastfix:.1f}")
+        lines.append(f"{myloc['lat']:.5f},{myloc['lon']:.5f},{time.time()-lastfix:.1f}")
     if rmtloc is not None and 'lat' in rmtloc:
-        lines.append(f"{rmtid}: {rmtloc['lat']:.5f},{rmtloc['lon']:.5f},{time.time()-lastrcvd+rmtloc['last']:.1f}")
+        lines.append(f"{rmtloc['lat']:.5f},{rmtloc['lon']:.5f},{time.time()-lastrcvd+rmtloc['last']:.1f}")
     if len(lines)==3:
         d=distance((myloc['lon'],myloc['lat']),(rmtloc['lon'],rmtloc['lat']))
         b=bearing((myloc['lon'],myloc['lat']),(rmtloc['lon'],rmtloc['lat']))
@@ -137,4 +137,4 @@ while True:
     getgps()
     send()
     updatedisplay()
-    time.sleep(1)
+    time.sleep(1+myid/10)
