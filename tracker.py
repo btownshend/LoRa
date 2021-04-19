@@ -14,8 +14,10 @@ import board
 import adafruit_ssd1306
 # Import RFM9x
 import adafruit_rfm9x
+import struct
+import sys
 
-myid=5
+myid=int(sys.argv[1])
 
 # Button A
 btnA = DigitalInOut(board.D5)
@@ -50,78 +52,92 @@ RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0)
 rfm9x.tx_power = 23
-lastrcvd=None
+lastrcvd=0
 pcntr=0
 myloc=None
-rmtloc=None
+rmtloc={}
 rmtid=None
 rmtcntr=None
 rssi=None
 lastsend=0
-SENDINTERVAL=5   # Time between transmits
+SENDINTERVAL=1   # Time between transmits
 
 # Setup gpsd
 import gps
+from geo.sphere import distance, bearing 
+
 gpssession=gps.gps()
 gpssession.stream(gps.WATCH_ENABLE|gps.WATCH_NEWSTYLE)
 lastfix=0
 GPSINTERVAL=5
 
 def receive():
-    global rmtloc rmtid, rmtcnt, rssi, lastrcvd
+    global rmtloc, rmtid, rmtcntr, rssi, lastrcvd
     packet = rfm9x.receive()
     if packet is not None:
-        [rmtid,rmtcntr,lat,lon]=struct.unpack('BHff',packet)
-        rmtloc['lat']=lat
-        rmtloc['lon']=lon
-        rssi=rfm9x.last_rssi
-        lastrcvd=time.time()
+        if len(packet)==28:
+            [rmtid,rmtcntr,lat,lon,rmttime]=struct.unpack('BHddf',packet)
+            rmtloc['lat']=lat
+            rmtloc['lon']=lon
+            rmtloc['last']=rmttime
+            rssi=rfm9x.last_rssi
+            lastrcvd=time.time()
+            return True
+        else:
+            print(f"Bad packet length: {len(packet)}")
+    return False
         
 def getgps():
     # Get GPS Fix if available and update our position
     global lastfix, myloc
-    while time.time()-lastfix > GPSINTERVAL:
+    start=time.time()
+    while time.time()-lastfix > GPSINTERVAL and time.time()-start < 2:
         report=gpssession.next()
+        print(f"report={report}")
         if report['class']=='TPV':
             myloc=report
             print(f"myloc={myloc}")
             lastfix=time.time()
         else:
             print(f"Ignoring report={report['class']}")
+    #print(f"Time since last fix: {time.time()-lastfix:.1f}")
 
 def updatedisplay():
-    display.fill(0)
     lines=[]
-    if packet_text is not None:
-        lines.append(f"ID:{rmtid},#{rmtcntr},{rssi}dBm,{time.time()-lastrcvd}s")
-    if myloc is not None:
-        lines.append("{myid}: %.6f,%.6f"%(myloc['lat'],myloc['lon']))
-    if rmtloc is not None:
-        lines.append("{rmtid}: %.6f,%.6f"%(rmtloc['lat'],rmtloc['lon']))
-
+    lines.append(f"{rmtcntr},{rssi}dBm,{time.time()-lastrcvd:.1f}s")
+    if myloc is not None and 'lat' in myloc:
+        lines.append(f"{myloc['lat']:.5f},{myloc['lon']:.5f},{time.time()-lastfix:.1f}")
+    if rmtloc is not None and 'lat' in rmtloc:
+        lines.append(f"{rmtloc['lat']:.5f},{rmtloc['lon']:.5f},{time.time()-lastrcvd+rmtloc['last']:.1f}")
+    if len(lines)==3:
+        d=distance((myloc['lon'],myloc['lat']),(rmtloc['lon'],rmtloc['lat']))
+        b=bearing((myloc['lon'],myloc['lat']),(rmtloc['lon'],rmtloc['lat']))
+        lines.append(f"d={d:.1f},b={b:.0f}")
     vpos=0
+    display.fill(0)
     for l in lines:
         print(l)
         display.text(l,0,vpos,1)
-        vpos+=10
+        vpos+=8
     display.show()
     
 def send():
     # Send any messages as needed
     global lastsend, myid, myloc, pcntr
-    if time.time()-lastsend<SENDINTERVAL:
-        return
-    if myloc is not None:
-        packet=struct.pack('BHff',myid,pcntr,0.0,0.0)
-    else
-        packet=struct.pack('BHff',myid,pcntr,myloc['lat'],myloc['lon'])
-    rfm9x.send(packet)
-    pcntr+=1
-    lastsend=time.time()
-    
+    if myloc is None:
+        packet=struct.pack('BHddf',myid,pcntr,0.0,0.0,0.0)
+    else:
+        packet=struct.pack('BHddf',myid,pcntr,myloc['lat'],myloc['lon'],time.time()-lastfix)
+    if not rfm9x.send(packet):
+        print("Failed send")
+    else:
+        pcntr+=1
+        lastsend=time.time()
+        print('send')
+
 while True:
-    receive()
+    rcvd=receive()
     getgps()
-    send()
+    if rcvd or time.time()-lastsend>SENDINTERVAL:
+        send()
     updatedisplay()
-    time.sleep(1)

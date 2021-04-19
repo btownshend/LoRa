@@ -65,9 +65,13 @@ while True:
         # Display the packet text and rssi
         display.fill(0)
         prev_packet = packet
-        packet_text = str(prev_packet, "utf-8")
+        try:
+            packet_text = str(prev_packet, "utf-8")
+        except UnicodeDecodeError as e:
+            print("error: ",e)
         display.text('RX: ', 0, 0, 1)
         display.text(packet_text, 25, 0, 1)
+        display.text("RSSI: %.0f"%rfm9x.last_rssi,25, 10, 1)
         time.sleep(1)
 
     if not btnA.value:
