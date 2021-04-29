@@ -92,6 +92,11 @@ function rakSensorDataDecode(hexStr) {
         myObj.magnetometer_z = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2)) + "μT";//unit:μT
         str = str.substring(8);
         break;
+      case 0x0c01: // battery
+	myObj.battery_status = str.substring(4,6);
+	myObj.battery_voltage = parseFloat((parseShort(str.substring(6, 10), 16) * 0.001).toFixed(3)) + "V";
+	str = str.substring(10);
+	break;
       default:
         str = str.substring(7);
         break;

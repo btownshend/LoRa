@@ -18,6 +18,27 @@ struct packet {
   int len, rssi, snr;
   struct msg m;
 };
+// battey of Seeeduino LoRaWAN
+const int pin_battery_status  = A5;
+const int pin_battery_voltage = A4;
+
+unsigned short batteryvoltage() {
+  unsigned short battery;
+
+  pinMode(pin_battery_status , OUTPUT);
+  digitalWrite(pin_battery_status , LOW);
+  delay(100);
+  battery = (analogRead(pin_battery_voltage) * 3300 * 11) >> 10;
+  pinMode(pin_battery_status , INPUT);
+
+  //SerialUSB.print("Battery: ");
+  //SerialUSB.println(battery);
+  return battery;
+}
+
+unsigned char batterystatus() {
+  return digitalRead(pin_battery_status);
+}
 
 void setup(void)
 {
@@ -94,12 +115,26 @@ void send() {
   unsigned char data[100];
   unsigned char *dptr = data;
 
-  // magnet x
+  // magnet x (0x09,0x02)
   *dptr++ = 0x09;  *dptr++ = 0x02;
   short mx = 1234;
   *dptr++ = ((unsigned char *)&mx)[1];
   *dptr++ = ((unsigned char *)&mx)[0];
+  
+  // battery (not in RAK set, choose 0x0c,0x01)
+  // status, then voltage
+  *dptr++ = 0x0c;  *dptr++ = 0x01;
+  *dptr++ = batterystatus();
+  unsigned short bv = batteryvoltage();
+  *dptr++ = ((unsigned char *)&bv)[1];
+  *dptr++ = ((unsigned char *)&bv)[0];
 
+
+  // magnet y (0x0a,0x02)
+  *dptr++ = 0x0a;  *dptr++ = 0x02;
+  *dptr++ = ((unsigned char *)&mx)[1];
+  *dptr++ = ((unsigned char *)&mx)[0];
+  
   gps.get_position(&lat, &lon, &age);  // lat, long are in units of degrees*1e6, age is in milliseconds
   if (age == gps.GPS_INVALID_AGE || age > 10000) {
     unsigned long chars;
