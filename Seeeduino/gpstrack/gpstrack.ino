@@ -16,7 +16,6 @@ char fmtbuf[200];
 void loop()
 {
   while (gps.available( Serial2 )) {
-    SerialUSB.println("got fix");
     fix = gps.read();
     if (fix.valid.location) {
       sprintf(fmtbuf, "status: %d, lat:%f, long:%f", fix.status, fix.latitude(), fix.longitude());
