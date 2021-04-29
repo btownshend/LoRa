@@ -5,19 +5,6 @@ short myid = 1;
 char fmtbuf[100];   // Space to build formatted strings
 const int updateInterval = 10;   // Update interval in seconds
 
-// Packets sent over LoRa
-struct msg  {
-  unsigned short sender;    // ID of sender
-  unsigned short framecntr;    // Sequential frame number
-  long lat; // Latitude in 10^-6 deg
-  long lon; // Longitude in 10^-6 deg
-  unsigned long age;  // Age of fix in milliseconds
-};
-
-struct packet {
-  int len, rssi, snr;
-  struct msg m;
-};
 // battey of Seeeduino LoRaWAN
 const int pin_battery_status  = A5;
 const int pin_battery_voltage = A4;
@@ -47,6 +34,7 @@ void setup(void)
   Serial2.begin(9600);
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
+  pinMode(pin_battery_status, INPUT);
 }
 
 
@@ -104,12 +92,6 @@ void loramsg(int n, unsigned char data[]) {
 static int lastSend = 0;
 
 void send() {
-  static short framecntr = 0;
-  struct msg m;
-
-
-  m.sender = myid;
-  m.framecntr = framecntr;
   long lat, lon;
   unsigned long age;
   unsigned char data[100];
@@ -146,10 +128,10 @@ void send() {
     SerialUSB.println("Got GPS data");
     long alt = gps.altitude();
     SerialUSB.print("Altitude:");
-    SerialUSB.println(alt,DEC);
+    SerialUSB.println(alt, DEC);
     if (alt == gps.GPS_INVALID_ALTITUDE)
-      alt=0xffffffff;
-      
+      alt = 0xffffffff;
+
     *dptr++ = 0x01; *dptr++ = 0x88; // GPS indicator
     lat = lat / 100;
     lon = lon / 100;
@@ -167,12 +149,6 @@ void send() {
   int sendStart = millis();
   loramsg(dptr - data, data);
   lastSend = millis();
-
-  framecntr++;
-  SerialUSB.print("Sent frame  ");
-  SerialUSB.print(m.framecntr);
-  SerialUSB.print(" took ");
-  SerialUSB.println(lastSend - sendStart, DEC);
 }
 
 void loop(void)
@@ -187,36 +163,37 @@ void loop(void)
   loraread();
   delay(1000);
 }
+
 void processMessage(int n, unsigned char *data) {
   SerialUSB.print("processMessage(");
   SerialUSB.print(n);
   SerialUSB.println(")");
 }
 
-void oldprocessMessage(struct packet &p) {
-  sprintf(fmtbuf, "%d,%d,%d,%d,%ld,%ld,%ld", p.m.sender, p.rssi, p.snr, p.m.framecntr, p.m.lat, p.m.lon, p.m.age);
-  SerialUSB.println(fmtbuf);
-  long lat, lon;
-  unsigned long age;
-  gps.get_position(&lat, &lon, &age);
-  if (lat != gps.GPS_INVALID_ANGLE) {
-    float bearing = gps.course_to(lat / 1e6, lon / 1e6, p.m.lat / 1e6, p.m.lon / 1e6);
-    float range = gps.distance_between(lat / 1e6, lon / 1e6, p.m.lat / 1e6, p.m.lon / 1e6);
-    sprintf(fmtbuf, "bearing=%.3f, range=%.3f", bearing, range);
-    SerialUSB.println(fmtbuf);
-  }
-}
+//void oldprocessMessage(struct packet &p) {
+//  sprintf(fmtbuf, "%d,%d,%d,%d,%ld,%ld,%ld", p.m.sender, p.rssi, p.snr, p.m.framecntr, p.m.lat, p.m.lon, p.m.age);
+//  SerialUSB.println(fmtbuf);
+//  long lat, lon;
+//  unsigned long age;
+//  gps.get_position(&lat, &lon, &age);
+//  if (lat != gps.GPS_INVALID_ANGLE) {
+//    float bearing = gps.course_to(lat / 1e6, lon / 1e6, p.m.lat / 1e6, p.m.lon / 1e6);
+//    float range = gps.distance_between(lat / 1e6, lon / 1e6, p.m.lat / 1e6, p.m.lon / 1e6);
+//    sprintf(fmtbuf, "bearing=%.3f, range=%.3f", bearing, range);
+//    SerialUSB.println(fmtbuf);
+//  }
+//}
 
 void processLoRa(char *buf) {
-  static struct packet p;
   //SerialUSB.print("Process: ");
   //SerialUSB.println(buf);
   if (strncmp(buf, "+TEST: LEN:", 11) == 0) {
-    int ns = sscanf(buf, "+TEST: LEN:%d, RSSI:%d, SNR:%d", &p.len, &p.rssi, &p.snr);
+    int len, rssi, snr;
+    int ns = sscanf(buf, "+TEST: LEN:%d, RSSI:%d, SNR:%d", &len, &rssi, &snr);
     if (ns != 3)
       SerialUSB.println("Failed Len scan");
     else {
-      sprintf(fmtbuf, "Len=%d, RSSI=%d, SNR=%d", p.len, p.rssi, p.snr);
+      sprintf(fmtbuf, "Len=%d, RSSI=%d, SNR=%d", len, rssi, snr);
       SerialUSB.println(fmtbuf);
     }
   } else if (strncmp(buf, "+MSGHEX: PORT: 1; RX: \"", 23) == 0) {
