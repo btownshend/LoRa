@@ -161,6 +161,8 @@ void lorawrite(char *str) {
 
 void loramsg(int n, unsigned char data[]) {
   // Send the msg
+  if (msgsending)
+    SerialUSB.println("*** loramsg while msgsending is true");
   strcpy(fmtbuf, "AT+MSGHEX=\"");
   char *fmtptr = fmtbuf + strlen(fmtbuf);
   for (int i = 0; i < n; i++) {
@@ -169,6 +171,7 @@ void loramsg(int n, unsigned char data[]) {
   }
   fmtptr[-1] = '"';
   lorawrite(fmtbuf);
+  msgsending = true;
 }
 
 static int lastSend = 0;
@@ -285,6 +288,7 @@ void loop(void)
 
   loraread();
   cmdread();
+  if (!msgsending)
     setmodulebatterylevel();
 }
 
@@ -344,6 +348,10 @@ void processLoRa(char *buf) {
   } else if (strcmp(buf, "+MSGHEX: Please join network first") == 0) {
     SerialUSB.println("Not joined");
     join();
+  } else if (strcmp(buf, "+MSGHEX: Done") == 0) {
+    if (!msgsending)
+      SerialUSB.println("MSGHEX done when msgsending was false");
+    msgsending = false;
   } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
     ;  // Ignore
   } else {
