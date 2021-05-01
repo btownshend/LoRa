@@ -34,6 +34,14 @@ void setup(void)
   Serial2.begin(9600);
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
+  int wbuf = SerialUSB.availableForWrite();
+  int wbuf1 = Serial1.availableForWrite();
+  int wbuf2 = Serial2.availableForWrite();
+  SerialUSB.println("Write buffers: ");
+  SerialUSB.print(wbuf); SerialUSB.print(", ");
+  SerialUSB.print(wbuf1); SerialUSB.print(", ");
+  SerialUSB.print(wbuf2); SerialUSB.print(", ");
+
   pinMode(pin_battery_status, INPUT);
   lorawrite("AT+DR=DR3");
   delay(100);
