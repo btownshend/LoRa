@@ -151,6 +151,35 @@ void send() {
   lastSend = millis();
 }
 
+void cmdexec(char *buf) {
+  SerialUSB.print("Exec: ");
+  SerialUSB.println(buf);
+  if (buf[0] == 'L')
+    lorawrite(buf + 1);
+  else if (buf[0] == 'G')
+    Serial2.println(buf + 1);
+  else
+    SerialUSB.println("Expected (L)ora or (G)PS command");
+}
+
+void cmdread(void) {
+  // Listen for commands from serial port
+  static char buf[100];
+  static int buflen = 0;
+  while (SerialUSB.available()) {
+    char c = SerialUSB.read();
+    if (c == '\r' || c == '\n') {
+      // Execute
+      if (buflen > 0) {
+        buf[buflen] = 0;
+        cmdexec(buf);
+        buflen = 0;
+      }
+    } else if (buflen < sizeof(buf) - 1)
+      buf[buflen++] = c;
+  }
+}
+
 void loop(void)
 {
   getgps();
@@ -161,6 +190,7 @@ void loop(void)
   }
 
   loraread();
+  cmdread();
   delay(1000);
 }
 
