@@ -135,7 +135,7 @@ void send() {
     SerialUSB.println(fmtbuf);
   } else {
     SerialUSB.println("Got GPS data");
-    long alt = gps.altitude();
+    long alt = gps.altitude();  // Altitude in cm
     SerialUSB.print("Altitude:");
     SerialUSB.println(alt, DEC);
     if (alt == gps.GPS_INVALID_ALTITUDE)
@@ -144,7 +144,6 @@ void send() {
     *dptr++ = 0x01; *dptr++ = 0x88; // GPS indicator
     lat = lat / 100;
     lon = lon / 100;
-    alt = alt * 100;
     *dptr++ = ((unsigned char *)&lat)[2];  // 3-byte encoding of lat,long * 1e4
     *dptr++ = ((unsigned char *)&lat)[1];
     *dptr++ = ((unsigned char *)&lat)[0];
