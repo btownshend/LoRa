@@ -30,8 +30,9 @@ unsigned char batterystatus() {
 void setup(void)
 {
   SerialUSB.begin(115200);
-  Serial1.begin(9600);
+  Serial1.begin(115200); // Seeeduino needs to have rate set using AT+UART=BR,115200
   Serial2.begin(9600);
+
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
   int wbuf = SerialUSB.availableForWrite();
