@@ -11,16 +11,15 @@ const int pin_battery_voltage = A4;
 int gpsecho = 20;
 
 unsigned short batteryvoltage() {
-  unsigned short battery;
+  // Not clear what pulling down the status pin is supposed to achieve
+  //pinMode(pin_battery_status , OUTPUT);
+  //digitalWrite(pin_battery_status , LOW);
+  //delay(100);  /// This may cause issues with losing serial chars -- @115,200 100ms = 1152 char
+  unsigned short battery = (analogRead(pin_battery_voltage) * 3300 * 11) >> 10;
+  //pinMode(pin_battery_status , INPUT);
 
-  pinMode(pin_battery_status , OUTPUT);
-  digitalWrite(pin_battery_status , LOW);
-  delay(100);
-  battery = (analogRead(pin_battery_voltage) * 3300 * 11) >> 10;
-  pinMode(pin_battery_status , INPUT);
-
-  //SerialUSB.print("Battery: ");
-  //SerialUSB.println(battery);
+  SerialUSB.print("Battery: ");
+  SerialUSB.println(battery);
   return battery;
 }
 
