@@ -43,21 +43,21 @@ function rakSensorDataDecode(hexStr) {
     var flag = parseInt(str.substring(0, 4), 16);
     switch (flag) {
       case 0x0768:// Humidity
-        myObj.humidity = parseFloat(((parseShort(str.substring(4, 6), 16) * 0.01 / 2) * 100).toFixed(1)) + "%RH";//unit:%RH
+        myObj.humidity = parseFloat(((parseShort(str.substring(4, 6), 16) * 0.01 / 2) * 100).toFixed(1)); // + "%RH";//unit:%RH
         str = str.substring(6);
         break;
       case 0x0673:// Atmospheric pressure
-        myObj.barometer = parseFloat((parseShort(str.substring(4, 8), 16) * 0.1).toFixed(2)) + "hPa";//unit:hPa
+        myObj.barometer = parseFloat((parseShort(str.substring(4, 8), 16) * 0.1).toFixed(2));// + "hPa";//unit:hPa
         str = str.substring(8);
         break;
       case 0x0267:// Temperature
-        myObj.temperature = parseFloat((parseShort(str.substring(4, 8), 16) * 0.1).toFixed(2)) + "°C";//unit: °C
+        myObj.temperature = parseFloat((parseShort(str.substring(4, 8), 16) * 0.1).toFixed(2));// + "°C";//unit: °C
         str = str.substring(8);
         break;
       case 0x0188:// GPS
-        myObj.latitude = parseFloat((parseTriple(str.substring(4, 10), 16) * 0.0001).toFixed(4)) + "°";//unit:°
-        myObj.longitude = parseFloat((parseTriple(str.substring(10, 16), 16) * 0.0001).toFixed(4)) + "°";//unit:°
-        myObj.altitude = parseFloat((parseTriple(str.substring(16, 22), 16) * 0.01).toFixed(1)) + "m";//unit:m
+        myObj.latitude = parseFloat((parseTriple(str.substring(4, 10), 16) * 0.0001).toFixed(4));// + "°";//unit:°
+        myObj.longitude = parseFloat((parseTriple(str.substring(10, 16), 16) * 0.0001).toFixed(4));// + "°";//unit:°
+        myObj.altitude = parseFloat((parseTriple(str.substring(16, 22), 16) * 0.01).toFixed(1));// + "m";//unit:m
         str = str.substring(22);
         break;
       case 0x0189:// GPS HDOP/Sats
@@ -66,40 +66,40 @@ function rakSensorDataDecode(hexStr) {
         str = str.substring(12);
         break;
       case 0x0371:// Triaxial acceleration
-        myObj.acceleration_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.001).toFixed(3)) + "g";//unit:g
-        myObj.acceleration_y = parseFloat((parseShort(str.substring(8, 12), 16) * 0.001).toFixed(3)) + "g";//unit:g
-        myObj.acceleration_z = parseFloat((parseShort(str.substring(12, 16), 16) * 0.001).toFixed(3)) + "g";//unit:g
+        myObj.acceleration_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.001).toFixed(3));// + "g";//unit:g
+        myObj.acceleration_y = parseFloat((parseShort(str.substring(8, 12), 16) * 0.001).toFixed(3));// + "g";//unit:g
+        myObj.acceleration_z = parseFloat((parseShort(str.substring(12, 16), 16) * 0.001).toFixed(3));// + "g";//unit:g
         str = str.substring(16);
         break;
       case 0x0402:// air resistance
-        myObj.gasResistance = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2)) + "KΩ";//unit:KΩ
+        myObj.gasResistance = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "KΩ";//unit:KΩ
         str = str.substring(8);
         break;
       case 0x0802:// Battery Voltage
-        myObj.battery = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2)) + "V";//unit:V
+        myObj.battery = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "V";//unit:V
         str = str.substring(8);
         break;
       case 0x0586:// gyroscope
-        myObj.gyroscope_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2)) + "°/s";//unit:°/s
-        myObj.gyroscope_y = parseFloat((parseShort(str.substring(8, 12), 16) * 0.01).toFixed(2)) + "°/s";//unit:°/s
-        myObj.gyroscope_z = parseFloat((parseShort(str.substring(12, 16), 16) * 0.01).toFixed(2)) + "°/s";//unit:°/s
+        myObj.gyroscope_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "°/s";//unit:°/s
+        myObj.gyroscope_y = parseFloat((parseShort(str.substring(8, 12), 16) * 0.01).toFixed(2));// + "°/s";//unit:°/s
+        myObj.gyroscope_z = parseFloat((parseShort(str.substring(12, 16), 16) * 0.01).toFixed(2));// + "°/s";//unit:°/s
         str = str.substring(16);
         break;
       case 0x0902:// magnetometer x
-        myObj.magnetometer_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2)) + "μT";//unit:μT
+        myObj.magnetometer_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "μT";//unit:μT
         str = str.substring(8);
         break;
       case 0x0a02:// magnetometer y
-        myObj.magnetometer_y = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2)) + "μT";//unit:μT
+        myObj.magnetometer_y = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "μT";//unit:μT
         str = str.substring(8);
         break;
       case 0x0b02:// magnetometer z
-        myObj.magnetometer_z = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2)) + "μT";//unit:μT
+        myObj.magnetometer_z = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "μT";//unit:μT
         str = str.substring(8);
         break;
       case 0x0c01: // battery
-	myObj.battery_status = str.substring(4,6);
-	myObj.battery_voltage = parseFloat((parseShort(str.substring(6, 10), 16) * 0.001).toFixed(3)) + "V";
+	myObj.battery_status = parseShort(str.substring(4,6),16);
+	myObj.battery_voltage = parseFloat((parseShort(str.substring(6, 10), 16) * 0.001).toFixed(3));// + "V";
 	str = str.substring(10);
 	break;
       default:
