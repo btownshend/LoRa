@@ -35,16 +35,16 @@ void setup(void)
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
   pinMode(pin_battery_status, INPUT);
+  lorawrite("AT+DR=DR3");
+  delay(100);
   join();
 }
 
 void join() {
   // while (!lora.setOTAAJoin(JOIN));
-  lorawrite("AT+DR=DR3");
-  delay(100);
   lorawrite("AT+JOIN");
-  // Should verify response
-  SerialUSB.println("Joined");
+  // TODO: Should verify response
+  SerialUSB.println("Join request initiated");
 }
 
 bool getgps() {
