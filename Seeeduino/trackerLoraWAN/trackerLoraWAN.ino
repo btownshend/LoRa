@@ -75,7 +75,7 @@ void setup(void)
   SerialUSB.println("Write buffers: ");
   SerialUSB.print(wbuf); SerialUSB.print(", ");
   SerialUSB.print(wbuf1); SerialUSB.print(", ");
-  SerialUSB.print(wbuf2); SerialUSB.print(", ");
+  SerialUSB.println(wbuf2);
 
   pinMode(pin_battery_status, INPUT);
   lorawrite("AT+DR=DR3");
@@ -153,7 +153,7 @@ void loraread() {
 }
 
 void lorawrite(char *str) {
-  // Send null terminate string to LoRa module
+  // Send null terminated string to LoRa module
   Serial1.println(str);
   SerialUSB.print(">LORA: ");
   SerialUSB.println(str);
@@ -197,7 +197,6 @@ void send() {
 
   *dptr++ = ((unsigned char *)&bv)[1];
   *dptr++ = ((unsigned char *)&bv)[0];
-
 
   // magnet y (0x0a,0x02)
   *dptr++ = 0x0a;  *dptr++ = 0x02;
