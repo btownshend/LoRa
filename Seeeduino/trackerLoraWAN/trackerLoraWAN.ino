@@ -241,7 +241,6 @@ void loop(void)
 
   loraread();
   cmdread();
-  delay(1000);
 }
 
 void processMessage(int n, unsigned char *data) {
