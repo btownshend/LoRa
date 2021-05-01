@@ -35,8 +35,17 @@ void setup(void)
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
   pinMode(pin_battery_status, INPUT);
+  join();
 }
 
+void join() {
+  // while (!lora.setOTAAJoin(JOIN));
+  lorawrite("AT+DR=DR3");
+  delay(100);
+  lorawrite("AT+JOIN");
+  // Should verify response
+  SerialUSB.println("Joined");
+}
 
 bool getgps() {
   // Parse any available data from GPS receiver
@@ -102,7 +111,7 @@ void send() {
   short mx = 1234;
   *dptr++ = ((unsigned char *)&mx)[1];
   *dptr++ = ((unsigned char *)&mx)[0];
-  
+
   // battery (not in RAK set, choose 0x0c,0x01)
   // status, then voltage
   *dptr++ = 0x0c;  *dptr++ = 0x01;
@@ -116,7 +125,7 @@ void send() {
   *dptr++ = 0x0a;  *dptr++ = 0x02;
   *dptr++ = ((unsigned char *)&mx)[1];
   *dptr++ = ((unsigned char *)&mx)[0];
-  
+
   gps.get_position(&lat, &lon, &age);  // lat, long are in units of degrees*1e6, age is in milliseconds
   if (age == gps.GPS_INVALID_AGE || age > 10000) {
     unsigned long chars;
@@ -247,6 +256,9 @@ void processLoRa(char *buf) {
     SerialUSB.println("Incoming message");
   } else if (strncmp(buf, "+MSGHEX: RXWIN", 14) == 0) {
     SerialUSB.println(&buf[14]);  // +MSGHEX: RXWIN1, RSSI -49, SNR 6.8
+  } else if (strcmp(buf, "+MSGHEX: Please join network first") == 0) {
+    SerialUSB.println("Not joined");
+    join();
   } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
     ;  // Ignore
   } else {
