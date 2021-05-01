@@ -9,6 +9,7 @@ const int updateInterval = 10;   // Update interval in seconds
 const int pin_battery_status  = A5;
 const int pin_battery_voltage = A4;
 int gpsecho = 20;
+bool msgsending = false;
 
 unsigned short batteryvoltage() {
   // Not clear what pulling down the status pin is supposed to achieve
@@ -27,6 +28,38 @@ unsigned char batterystatus() {
   // 0-charging, 1-onbattery
   return digitalRead(pin_battery_status);
 }
+
+
+void setmodulebatterylevel() {
+  static unsigned long lasttime = 0;
+  if (millis() - lasttime < 15000)
+    return;
+  lasttime = millis();
+  unsigned char bs = batterystatus(); // 0-charging, 1-onbattery
+
+  // Set battery level in LoRa module so that it can respond correctly to DevStatusReq
+  if (bs == 0)
+    // On charge, no battery voltage
+    lorawrite("AT+LW=BAT,0"); // 0=external power source, 255=unknown, 1-254 = x/254*100%
+  else {
+    unsigned short bv = batteryvoltage();
+
+    const int minvolt = 3000; // 0%
+    const int maxvolt = 5000; // 100%
+
+    int frac = (int(bv) - minvolt) * 254 / (maxvolt - minvolt);
+    if (frac < 0)
+      frac = 0;
+    else if (frac > 254)
+      frac = 254;
+
+    sprintf(fmtbuf, "AT+LW=BAT,%d", frac);
+    SerialUSB.print("fmtbuf: ");
+    SerialUSB.println(fmtbuf);
+    lorawrite(fmtbuf);
+  }
+}
+
 
 void setup(void)
 {
@@ -154,9 +187,11 @@ void send() {
 
   // battery (not in RAK set, choose 0x0c,0x01)
   // status, then voltage
-  *dptr++ = 0x0c;  *dptr++ = 0x01;
-  *dptr++ = batterystatus();
+  unsigned char bs = batterystatus(); // 0-charging, 1-onbattery
   unsigned short bv = batteryvoltage();
+  *dptr++ = 0x0c;  *dptr++ = 0x01;
+  *dptr++ = bs;
+
   *dptr++ = ((unsigned char *)&bv)[1];
   *dptr++ = ((unsigned char *)&bv)[0];
 
@@ -250,6 +285,7 @@ void loop(void)
 
   loraread();
   cmdread();
+    setmodulebatterylevel();
 }
 
 void processMessage(int n, unsigned char *data) {
