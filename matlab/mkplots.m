@@ -1,0 +1,3 @@
+batteryplot
+locplot
+snrplot
