@@ -60,6 +60,11 @@ function rakSensorDataDecode(hexStr) {
         myObj.altitude = parseFloat((parseTriple(str.substring(16, 22), 16) * 0.01).toFixed(1)) + "m";//unit:m
         str = str.substring(22);
         break;
+      case 0x0189:// GPS HDOP/Sats
+        myObj.hdop = parseFloat((parseTriple(str.substring(4, 10), 16) * 0.01).toFixed(2)) ;//unit:°
+        myObj.numsats = parseShort(str.substring(10, 12), 16);
+        str = str.substring(12);
+        break;
       case 0x0371:// Triaxial acceleration
         myObj.acceleration_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.001).toFixed(3)) + "g";//unit:g
         myObj.acceleration_y = parseFloat((parseShort(str.substring(8, 12), 16) * 0.001).toFixed(3)) + "g";//unit:g

@@ -154,6 +154,15 @@ void send() {
     *dptr++ = ((unsigned char *)&alt)[2];
     *dptr++ = ((unsigned char *)&alt)[1];
     *dptr++ = ((unsigned char *)&alt)[0];
+
+    // Get hdop and num sats
+    unsigned long hdop = gps.hdop();
+    unsigned short numsat = gps.satellites();
+    *dptr++ = 0x01; *dptr++ = 0x89; // GPS HDOP/sats
+    *dptr++ = ((unsigned char *)&hdop)[2];
+    *dptr++ = ((unsigned char *)&hdop)[1];
+    *dptr++ = ((unsigned char *)&hdop)[0];
+    *dptr++ = ((unsigned char *)&numsat)[0];
   }
   int sendStart = millis();
   loramsg(dptr - data, data);
