@@ -10,6 +10,7 @@ const int pin_battery_status  = A5;
 const int pin_battery_voltage = A4;
 int gpsecho = 20;
 bool msgsending = false;
+int maxmsglen = 53;
 
 unsigned short batteryvoltage() {
   // Not clear what pulling down the status pin is supposed to achieve
@@ -186,26 +187,6 @@ void send() {
   unsigned char data[100];
   unsigned char *dptr = data;
 
-  // magnet x (0x09,0x02)
-  *dptr++ = 0x09;  *dptr++ = 0x02;
-  short mx = 1234;
-  *dptr++ = ((unsigned char *)&mx)[1];
-  *dptr++ = ((unsigned char *)&mx)[0];
-
-  // battery (not in RAK set, choose 0x0c,0x01)
-  // status, then voltage
-  unsigned char bs = batterystatus(); // 0-charging, 1-onbattery
-  unsigned short bv = batteryvoltage();
-  *dptr++ = 0x0c;  *dptr++ = 0x01;
-  *dptr++ = bs;
-
-  *dptr++ = ((unsigned char *)&bv)[1];
-  *dptr++ = ((unsigned char *)&bv)[0];
-
-  // magnet y (0x0a,0x02)
-  *dptr++ = 0x0a;  *dptr++ = 0x02;
-  *dptr++ = ((unsigned char *)&mx)[1];
-  *dptr++ = ((unsigned char *)&mx)[0];
 
   gps.get_position(&lat, &lon, &age);  // lat, long are in units of degrees*1e6, age is in milliseconds
   if (age == gps.GPS_INVALID_AGE || age > 10000) {
@@ -222,19 +203,23 @@ void send() {
     if (alt == gps.GPS_INVALID_ALTITUDE)
       alt = 0xffffffff;
 
-    *dptr++ = 0x01; *dptr++ = 0x88; // GPS indicator
-    lat = lat / 100;
-    lon = lon / 100;
-    *dptr++ = ((unsigned char *)&lat)[2];  // 3-byte encoding of lat,long * 1e4
-    *dptr++ = ((unsigned char *)&lat)[1];
-    *dptr++ = ((unsigned char *)&lat)[0];
-    *dptr++ = ((unsigned char *)&lon)[2];
-    *dptr++ = ((unsigned char *)&lon)[1];
-    *dptr++ = ((unsigned char *)&lon)[0];
-    *dptr++ = ((unsigned char *)&alt)[2];
-    *dptr++ = ((unsigned char *)&alt)[1];
-    *dptr++ = ((unsigned char *)&alt)[0];
+    if (maxmsglen >= 11) {
+      *dptr++ = 0x01; *dptr++ = 0x88; // GPS indicator
+      lat = lat / 100;
+      lon = lon / 100;
+      *dptr++ = ((unsigned char *)&lat)[2];  // 3-byte encoding of lat,long * 1e4
+      *dptr++ = ((unsigned char *)&lat)[1];
+      *dptr++ = ((unsigned char *)&lat)[0];
+      *dptr++ = ((unsigned char *)&lon)[2];
+      *dptr++ = ((unsigned char *)&lon)[1];
+      *dptr++ = ((unsigned char *)&lon)[0];
+      *dptr++ = ((unsigned char *)&alt)[2];
+      *dptr++ = ((unsigned char *)&alt)[1];
+      *dptr++ = ((unsigned char *)&alt)[0];
+    }
+  }
 
+  if (maxmsglen > 50) {
     // Get hdop and num sats
     unsigned long hdop = gps.hdop();
     unsigned short numsat = gps.satellites();
@@ -243,6 +228,29 @@ void send() {
     *dptr++ = ((unsigned char *)&hdop)[1];
     *dptr++ = ((unsigned char *)&hdop)[0];
     *dptr++ = ((unsigned char *)&numsat)[0];
+
+    // magnet x (0x09,0x02)
+    *dptr++ = 0x09;  *dptr++ = 0x02;
+    short mx = 1234;
+    *dptr++ = ((unsigned char *)&mx)[1];
+    *dptr++ = ((unsigned char *)&mx)[0];
+
+    // battery (not in RAK set, choose 0x0c,0x01)
+    // status, then voltage
+    unsigned char bs = batterystatus(); // 0-charging, 1-onbattery
+    unsigned short bv = batteryvoltage();
+    *dptr++ = 0x0c;  *dptr++ = 0x01;
+    *dptr++ = bs;
+
+    *dptr++ = ((unsigned char *)&bv)[1];
+    *dptr++ = ((unsigned char *)&bv)[0];
+
+    // magnet y (0x0a,0x02)
+    *dptr++ = 0x0a;  *dptr++ = 0x02;
+    *dptr++ = ((unsigned char *)&mx)[1];
+    *dptr++ = ((unsigned char *)&mx)[0];
+  } else {
+    SerialUSB.println("Short send");
   }
   int sendStart = millis();
   loramsg(dptr - data, data);
@@ -291,8 +299,17 @@ void loop(void)
 
   loraread();
   cmdread();
-  if (!msgsending)
+  if (!msgsending) {
     setmodulebatterylevel();
+    if (maxmsglen < 53) {
+      // Check if the maximum message length has increase
+      static unsigned long lastlenmsg = 0;
+      if (millis() - lastlenmsg > 5000) {
+        lorawrite("AT+LW=LEN");
+        lastlenmsg = millis();
+      }
+    }
+  }
 }
 
 void processMessage(int n, unsigned char *data) {
@@ -344,6 +361,10 @@ void processLoRa(char *buf) {
     ;  // Ignore
   } else if (strncmp(buf, "+LOG", 4) == 0) {
     ;  // Ignore
+  } else if (strncmp(buf, "+LW: LEN", 8) == 0) {
+    maxmsglen = atoi(&buf[9]);
+    SerialUSB.print("Max message length: ");
+    SerialUSB.println(maxmsglen);
   } else if (strcmp(buf, "+MSGHEX: FPENDING") == 0) {
     SerialUSB.println("Incoming message");
   } else if (strncmp(buf, "+MSGHEX: RXWIN", 14) == 0) {
@@ -355,6 +376,12 @@ void processLoRa(char *buf) {
     if (!msgsending)
       SerialUSB.println("MSGHEX done when msgsending was false");
     msgsending = false;
+  } else if (strncmp(buf, "+MSGHEX: Length error", 21) == 0) {
+    SerialUSB.print("Length error");
+    msgsending = false;
+    maxmsglen = atoi(&buf[22]); // Probably due to DR0 fallback
+    SerialUSB.print("Max message length: ");
+    SerialUSB.println(maxmsglen);
   } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
     ;  // Ignore
   } else {
