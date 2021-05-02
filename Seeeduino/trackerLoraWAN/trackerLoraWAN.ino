@@ -442,6 +442,9 @@ void processLoRa(char *buf) {
     margin = atoi(&buf[14]);
     SerialUSB.print("Link margin: ");
     SerialUSB.println(margin);
+  } else if (strncmp(buf, "+MSGHEX: No free channel", 24) == 0) {
+    SerialUSB.println("No free channel");
+    msgsending = false;
   } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
     ;  // Ignore
   } else {
