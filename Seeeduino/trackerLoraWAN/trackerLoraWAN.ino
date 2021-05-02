@@ -11,6 +11,7 @@ const int pin_battery_voltage = A4;
 int gpsecho = 20;
 bool msgsending = false;
 int maxmsglen = 53;
+int margin = 0;   // Assume 0dB margin to start
 
 unsigned short batteryvoltage() {
   // Not clear what pulling down the status pin is supposed to achieve
@@ -79,9 +80,32 @@ void setup(void)
   SerialUSB.println(wbuf2);
 
   pinMode(pin_battery_status, INPUT);
-  lorawrite("AT+DR=DR3");
-  delay(100);
+  setDR();
   join();
+}
+
+bool setDR() {
+  // Set DR in Lora module if needed based on current margin
+  // Return true if changed
+  const int installmargin = 10;
+  const int minDR = 0;
+  const int maxDR = 4;
+  static int currentDR = -1;
+
+  int tgtDR = ((margin - installmargin) - (-20)) * 2 / 5;
+  if (tgtDR < minDR)
+    tgtDR = minDR;
+  else if (tgtDR > maxDR)
+    tgtDR = maxDR;
+  if (tgtDR != currentDR) {
+    sprintf(fmtbuf, "margin=%d: changing DR from %d to %d", margin, currentDR, tgtDR);
+    SerialUSB.println(fmtbuf);
+    currentDR = tgtDR;
+    sprintf(fmtbuf, "AT+DR=DR%d", currentDR);
+    lorawrite(fmtbuf);
+    return true;
+  } else
+    return false;
 }
 
 void join() {
@@ -310,6 +334,16 @@ void loop(void)
       }
     }
   }
+  if (setDR())
+    return;
+
+  static unsigned long lastLCR = 0;
+  if (millis() - lastLCR > 60000) {
+    lastLCR = millis();
+    lorawrite("AT+LW=LCR");
+    margin -= 1; // In case we don't get a reply, slowly decrease our margin
+    return;
+  }
 }
 
 void processMessage(int n, unsigned char *data) {
@@ -382,6 +416,10 @@ void processLoRa(char *buf) {
     maxmsglen = atoi(&buf[22]); // Probably due to DR0 fallback
     SerialUSB.print("Max message length: ");
     SerialUSB.println(maxmsglen);
+  } else if (strncmp(buf, "+MSGHEX: Link ", 14) == 0) { // e.g. +MSGHEX: Link 21, 1
+    margin = atoi(&buf[14]);
+    SerialUSB.print("Link margin: ");
+    SerialUSB.println(margin);
   } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
     ;  // Ignore
   } else {
