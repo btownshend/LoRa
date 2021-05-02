@@ -12,6 +12,8 @@ int gpsecho = 20;
 bool msgsending = false;
 int maxmsglen = 53;
 int margin = 0;   // Assume 0dB margin to start
+unsigned long lorabusy = 0; // Time in msec that last lora cmd was sent -- avoid overrunning
+const int LORABUSYTIME = 10;  // Assume cmds take this long to run (msec)
 
 unsigned short batteryvoltage() {
   // Not clear what pulling down the status pin is supposed to achieve
@@ -32,10 +34,10 @@ unsigned char batterystatus() {
 }
 
 
-void setmodulebatterylevel() {
+bool setmodulebatterylevel() {
   static unsigned long lasttime = 0;
   if (millis() - lasttime < 15000)
-    return;
+    return false;
   lasttime = millis();
   unsigned char bs = batterystatus(); // 0-charging, 1-onbattery
 
@@ -60,6 +62,7 @@ void setmodulebatterylevel() {
     SerialUSB.println(fmtbuf);
     lorawrite(fmtbuf);
   }
+  return true;
 }
 
 
@@ -177,17 +180,32 @@ void loraread() {
   }
 }
 
+bool islorabusy() {
+  return msgsending || Serial1.available() || (millis() - lorabusy < LORABUSYTIME);
+}
+
 void lorawrite(char *str) {
   // Send null terminated string to LoRa module
+  if (msgsending) {
+    SerialUSB.println("*** lorawrite while msgsending is true; clearing");
+    msgsending = false;
+  }
+
+  while (islorabusy()) {
+    SerialUSB.println("*** Lora busy with prior command, delaying");
+    loraread();
+    delay(1);
+  }
   Serial1.println(str);
+  lorabusy = millis();
+
   SerialUSB.print(">LORA: ");
   SerialUSB.println(str);
 }
 
 void loramsg(int n, unsigned char data[]) {
   // Send the msg
-  if (msgsending)
-    SerialUSB.println("*** loramsg while msgsending is true");
+
   if (n == 0)
     lorawrite("AT+MSGHEX");  // 0-length
   else {
@@ -323,15 +341,19 @@ void loop(void)
 
   loraread();
   cmdread();
-  if (!msgsending) {
-    setmodulebatterylevel();
-    if (maxmsglen < 53) {
-      // Check if the maximum message length has increase
-      static unsigned long lastlenmsg = 0;
-      if (millis() - lastlenmsg > 5000) {
-        lorawrite("AT+LW=LEN");
-        lastlenmsg = millis();
-      }
+
+  // Other tasks to do when LoRa is not busy
+  if (islorabusy())
+    return;
+  if (setmodulebatterylevel())
+    return;
+  if (maxmsglen < 53) {
+    // Check if the maximum message length has increase
+    static unsigned long lastlenmsg = 0;
+    if (millis() - lastlenmsg > 5000) {
+      lorawrite("AT+LW=LEN");
+      lastlenmsg = millis();
+      return;
     }
   }
   if (setDR())
