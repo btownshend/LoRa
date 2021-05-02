@@ -163,14 +163,18 @@ void loramsg(int n, unsigned char data[]) {
   // Send the msg
   if (msgsending)
     SerialUSB.println("*** loramsg while msgsending is true");
-  strcpy(fmtbuf, "AT+MSGHEX=\"");
-  char *fmtptr = fmtbuf + strlen(fmtbuf);
-  for (int i = 0; i < n; i++) {
-    sprintf(fmtptr, "%02X ", data[i]);
-    fmtptr += 3;
+  if (n == 0)
+    lorawrite("AT+MSGHEX");  // 0-length
+  else {
+    strcpy(fmtbuf, "AT+MSGHEX=\"");
+    char *fmtptr = fmtbuf + strlen(fmtbuf);
+    for (int i = 0; i < n; i++) {
+      sprintf(fmtptr, "%02X ", data[i]);
+      fmtptr += 3;
+    }
+    fmtptr[-1] = '"';
+    lorawrite(fmtbuf);
   }
-  fmtptr[-1] = '"';
-  lorawrite(fmtbuf);
   msgsending = true;
 }
 
