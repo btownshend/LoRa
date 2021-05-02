@@ -74,13 +74,13 @@ void setup(void)
 
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
-  int wbuf = SerialUSB.availableForWrite();
-  int wbuf1 = Serial1.availableForWrite();
-  int wbuf2 = Serial2.availableForWrite();
-  SerialUSB.println("Write buffers: ");
-  SerialUSB.print(wbuf); SerialUSB.print(", ");
-  SerialUSB.print(wbuf1); SerialUSB.print(", ");
-  SerialUSB.println(wbuf2);
+  //  int wbuf = SerialUSB.availableForWrite();
+  //  int wbuf1 = Serial1.availableForWrite();
+  //  int wbuf2 = Serial2.availableForWrite();
+  //  SerialUSB.println("Write buffers: ");
+  //  SerialUSB.print(wbuf); SerialUSB.print(", ");
+  //  SerialUSB.print(wbuf1); SerialUSB.print(", ");
+  //  SerialUSB.println(wbuf2);
 
   pinMode(pin_battery_status, INPUT);
   setDR();
@@ -374,23 +374,10 @@ void processMessage(int n, unsigned char *data) {
   SerialUSB.println(")");
 }
 
-//void oldprocessMessage(struct packet &p) {
-//  sprintf(fmtbuf, "%d,%d,%d,%d,%ld,%ld,%ld", p.m.sender, p.rssi, p.snr, p.m.framecntr, p.m.lat, p.m.lon, p.m.age);
-//  SerialUSB.println(fmtbuf);
-//  long lat, lon;
-//  unsigned long age;
-//  gps.get_position(&lat, &lon, &age);
-//  if (lat != gps.GPS_INVALID_ANGLE) {
-//    float bearing = gps.course_to(lat / 1e6, lon / 1e6, p.m.lat / 1e6, p.m.lon / 1e6);
-//    float range = gps.distance_between(lat / 1e6, lon / 1e6, p.m.lat / 1e6, p.m.lon / 1e6);
-//    sprintf(fmtbuf, "bearing=%.3f, range=%.3f", bearing, range);
-//    SerialUSB.println(fmtbuf);
-//  }
-//}
-
 void processLoRa(char *buf) {
-  //SerialUSB.print("Process: ");
-  //SerialUSB.println(buf);
+  // Process LoRa message in buf
+  // Make sure not to try to send any LoRa from here as it may be called while waiting to send something else
+
   if (strncmp(buf, "+TEST: LEN:", 11) == 0) {
     int len, rssi, snr;
     int ns = sscanf(buf, "+TEST: LEN:%d, RSSI:%d, SNR:%d", &len, &rssi, &snr);
