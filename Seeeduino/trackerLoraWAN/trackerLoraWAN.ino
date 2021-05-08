@@ -447,17 +447,14 @@ void send() {
     // Get hdop and num sats
     unsigned long hdop = gps.hdop();
     unsigned short numsat = gps.satellites();
-    *dptr++ = 0x01; *dptr++ = 0x89; // GPS HDOP/sats
-    *dptr++ = ((unsigned char *)&hdop)[2];
-    *dptr++ = ((unsigned char *)&hdop)[1];
-    *dptr++ = ((unsigned char *)&hdop)[0];
-    *dptr++ = ((unsigned char *)&numsat)[0];
-
-    // magnet x (0x09,0x02)
-    *dptr++ = 0x09;  *dptr++ = 0x02;
-    short mx = 1234;
-    *dptr++ = ((unsigned char *)&mx)[1];
-    *dptr++ = ((unsigned char *)&mx)[0];
+    if (numsat != gps.GPS_INVALID_SATELLITES) {
+      *dptr++ = 0x01; *dptr++ = 0x89; // GPS HDOP/sats
+      *dptr++ = ((unsigned char *)&hdop)[2];
+      *dptr++ = ((unsigned char *)&hdop)[1];
+      *dptr++ = ((unsigned char *)&hdop)[0];
+      *dptr++ = ((unsigned char *)&numsat)[0];
+    }
+  }
 
   if (maxmsglen > 4 + (dptr - data)) {
     // battery (not in RAK set, choose 0x0c,0x01)
