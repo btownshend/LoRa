@@ -1,4 +1,5 @@
 // Define a stepper and the pins it will use
+#include <Scheduler.h>
 #include <AccelStepper.h>
 
 #include "globals.h"
@@ -58,4 +59,13 @@ void stepperloop() {
     stepper.run();
     delay(100);
     //SerialUSB.println("stepperloop end");
+    // Check stack
+    static int minstack=100000;
+    if (Scheduler.stack() < minstack) {
+	SerialUSB.print("Stepper stack decreased from ");
+	SerialUSB.print(minstack);
+	SerialUSB.print(" to ");
+	SerialUSB.println(Scheduler.stack());
+	minstack=Scheduler.stack();
+    }
 }

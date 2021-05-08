@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Scheduler.h>
 
 #include "globals.h"
 #include "lorawan.h"
@@ -364,6 +365,15 @@ void lorawanloop(void)
     lorawrite("AT+LW=LCR");
     margin -= 1; // In case we don't get a reply, slowly decrease our margin
     return;
+  }
+  // Check stack
+  static int minstack=100000;
+  if (Scheduler.stack() < minstack) {
+    SerialUSB.print("LoRaWAN stack decreased from ");
+    SerialUSB.print(minstack);
+    SerialUSB.print(" to ");
+    SerialUSB.println(Scheduler.stack());
+    minstack=Scheduler.stack();
   }
 }
 
