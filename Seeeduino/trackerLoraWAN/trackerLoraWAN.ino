@@ -4,6 +4,12 @@
 #include <Wire.h>
 // If there's a complie error in I2Cdev.cpp, need to add #define BUFFER_LENGTH 32 in I2Cdev.h in library
 
+#define ENABLESTEPPER
+// Define a stepper and the pins it will use
+#ifdef ENABLESTEPPER
+#include <AccelStepper.h>
+AccelStepper stepper; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
+#endif
 
 TinyGPS gps;
 short myid = 1;
@@ -144,6 +150,48 @@ bool update9DOF() {
   return err == AK09918_ERR_OK;
 }
 
+#ifdef ENABLESTEPPER
+void gotoangle(float angle) {
+  const int STEPSPERREV = 720;
+
+  int newpos = (int)(angle * STEPSPERREV / 360);
+  int curpos = stepper.currentPosition();
+  int change = newpos  - curpos;
+  change = (change + STEPSPERREV / 2) % STEPSPERREV - STEPSPERREV / 2;
+  //  sprintf(fmtbuf,"cur=%d, new=%d, change=%d",curpos, newpos, change);
+  //  Serial.println(fmtbuf);
+  stepper.moveTo(curpos + change);
+}
+#endif
+
+void adjuststepper() {
+  // Adjust stepper accordinly
+  // roll/pitch in radian
+  double roll = atan2((float)acc_y, (float)acc_z);
+  double pitch = atan2(-(float)acc_x, sqrt((float)acc_y * acc_y + (float)acc_z * acc_z));
+
+  double Xheading = mag_x * cos(pitch) + mag_y * sin(roll) * sin(pitch) + mag_z * cos(roll) * sin(pitch);
+  double Yheading = mag_y * cos(roll) - mag_z * sin(pitch);
+
+  const double declination = -6;   // Magnetic declination
+  double heading = 180 + 57.3 * atan2(Yheading, Xheading) + declination;
+  //double heading = 180 + 57.3 * atan2(mag_y, mag_x) + declination;
+
+  double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
+
+#ifdef ENABLESTEPPER
+  gotoangle(heading);
+#endif
+
+  static unsigned long lastdbg = 0;
+
+  if (millis() - lastdbg > 1000 ) {
+    sprintf(fmtbuf, "Roll: %.0f, Pitch: %.0f, Heading: %.0f, Field: %.0f\n", roll * 57.3, pitch * 57.3, heading, field);
+    SerialUSB.println(fmtbuf);
+    lastdbg = millis();
+  }
+}
+
 unsigned short batteryvoltage() {
   // Not clear what pulling down the status pin is supposed to achieve
   pinMode(pin_battery_status , OUTPUT);
@@ -200,6 +248,11 @@ void setup(void)
   SerialUSB.begin(115200);
   Serial1.begin(115200); // Seeeduino needs to have rate set using AT+UART=BR,115200
   Serial2.begin(9600);
+
+#ifdef ENABLESTEPPER
+  stepper.setMaxSpeed(3600);
+  stepper.setAcceleration(12000 / 100);
+#endif
 
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
@@ -493,7 +546,14 @@ void cmdread(void) {
 void loop(void)
 {
   if (update9DOF()) {
+    // If we have a new value, adjust stepper
+    adjuststepper();
   }
+#ifdef ENABLESTEPPER
+  stepper.run();
+#endif
+
+
   getgps();
 
   if (millis() - lastSend > 1000 * updateInterval) {
