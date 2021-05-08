@@ -40,10 +40,13 @@ bool setmodulebatterylevel() {
 	else if (frac > 254)
 	    frac = 254;
 
-	sprintf(fmtbuf, "AT+LW=BAT,%d", frac);
-	SerialUSB.print("fmtbuf: ");
-	SerialUSB.println(fmtbuf);
-	lorawrite(fmtbuf);
+	static int lastfrac=-1;
+	if (lastfrac!=frac) {
+	    // Only if the percentage has changed, update the module
+	    sprintf(fmtbuf, "AT+LW=BAT,%d", frac);
+	    lorawrite(fmtbuf);
+	    lastfrac=frac;
+	}
     }
     return true;
 }
