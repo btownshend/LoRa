@@ -355,6 +355,7 @@ void lorawanusercommand(const char *line) {
 void lorawansetup(void) {
     Serial1.begin(115200); // Seeeduino needs to have rate set using AT+UART=BR,115200
     delay(100);
+    loraread();
     setDR();
     join();
 }
