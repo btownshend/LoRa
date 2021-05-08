@@ -363,11 +363,6 @@ void lorawanloop(void)
 {
     yield();
 
-    if (millis() - lastSend > 1000 * updateInterval) {
-	// Time to try sending
-	send();
-    }
-
     loraread();
 
     // Other tasks to do when LoRa is not busy
@@ -402,6 +397,9 @@ void lorawanloop(void)
 	return;
     }
 
+    if (millis() - lastSend > 1000 * updateInterval) {
+	// Time to try sending
+	send();
     }
 
 
