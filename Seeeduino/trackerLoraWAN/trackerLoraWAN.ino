@@ -1,3 +1,5 @@
+#include <Scheduler.h>
+
 #include "gps.h"
 #include "imu.h"
 
@@ -128,17 +130,13 @@ void setup(void)
 
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
-  //  int wbuf = SerialUSB.availableForWrite();
-  //  int wbuf1 = Serial1.availableForWrite();
-  //  int wbuf2 = Serial2.availableForWrite();
-  //  SerialUSB.println("Write buffers: ");
-  //  SerialUSB.print(wbuf); SerialUSB.print(", ");
-  //  SerialUSB.print(wbuf1); SerialUSB.print(", ");
-  //  SerialUSB.println(wbuf2);
-
+  imusetup();
+  
   pinMode(pin_battery_status, INPUT);
   setDR();
   join();
+  if (haveimu)
+    Scheduler.startLoop(imuloop);
 }
 
 bool setDR() {
@@ -296,7 +294,7 @@ void send() {
     *dptr++ = ((unsigned char *)&bv)[0];
   }
 
-  if (update9DOF()) {
+  if (haveimu) {
     if (maxmsglen > 12 + (dptr - data)) {
       // magnet x (0x09,0x02)
       *dptr++ = 0x09;  *dptr++ = 0x02;
@@ -373,10 +371,8 @@ void cmdread(void) {
 
 void loop(void)
 {
-  if (update9DOF()) {
     // If we have a new value, adjust stepper
     adjuststepper();
-  }
 #ifdef ENABLESTEPPER
   stepper.run();
 #endif

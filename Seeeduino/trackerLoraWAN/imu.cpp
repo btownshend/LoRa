@@ -11,46 +11,35 @@ extern char fmtbuf[];
 short acc_x, acc_y, acc_z;
 short gyro_x, gyro_y, gyro_z;
 short mag_x, mag_y, mag_z;
-bool have9dof = true;
+bool haveimu = false;
 
-bool update9DOF() {
-  static unsigned long lasttime = 0;
+// Private
+static bool initialized = false;
+static AK09918 ak09918;
+static ICM20600 icm20600(true);
 
-  if (millis() - lasttime < 100) {
-    return false;
-  }
-  lasttime = millis();
 
-  if (!have9dof)
-    return false;
+void imusetup() {
+    SerialUSB.println("imusetup");
 
-  static bool initialized = false;
-  static AK09918 ak09918;
-  static ICM20600 icm20600(true);
-  AK09918_err_type_t err;
-  static short mag_xmin = -1000, mag_xmax = 1000, mag_ymin = -1000, mag_ymax = 1000, mag_zmin = -1000, mag_zmax = 1000;
-
-  if (!initialized) {
     // Enable Grove connectors
     digitalWrite(38, HIGH);
 
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
 
-    err = ak09918.initialize();
+    AK09918_err_type_t err = ak09918.initialize();
     if (err != AK09918_ERR_OK) {
       Serial.print("Error initializing AK09918: 0x");
       Serial.println(err, HEX);
-      have9dof=false;
-      return false;
+      return;
     }
 
     err = ak09918.selfTest();
     if (err != AK09918_ERR_OK) {
       Serial.print("Error in selfTest of AK09918: 0x");
       Serial.println(err, HEX);
-      have9dof=false;
-      return false;
+      return;
     }
 
     icm20600.initialize();
@@ -58,8 +47,11 @@ bool update9DOF() {
     ak09918.switchMode(AK09918_CONTINUOUS_100HZ);
     delay(100);
     SerialUSB.println("9DOF Initialized");
-    initialized = true;
+    haveimu=true;
   }
+
+void update9DOF() {
+
   // Module mounted on side, so x=mz, y=mx, z=-my;
   acc_x = icm20600.getRawAccelerationX();
   acc_z = -icm20600.getRawAccelerationY();
@@ -68,10 +60,11 @@ bool update9DOF() {
   gyro_z = -icm20600.getRawGyroscopeY();
   gyro_y = icm20600.getRawGyroscopeZ();
   int32_t x, y, z;
-  err = ak09918.getRawData(&x, &y, &z);  // raw data is in units of 0.15uT
+  AK09918_err_type_t err = ak09918.getRawData(&x, &y, &z);  // raw data is in units of 0.15uT
   //mag_x = x; mag_y = y; mag_z = z;
   mag_x = x; mag_y = z; mag_z = -y;  // Module is mounted on side
 
+  static short mag_xmin = -1000, mag_xmax = 1000, mag_ymin = -1000, mag_ymax = 1000, mag_zmin = -1000, mag_zmax = 1000;
   bool changed = false;
   if (mag_x < mag_xmin) {
     mag_xmin = mag_x;
@@ -135,6 +128,10 @@ bool update9DOF() {
     SerialUSB.println(fmtbuf);
     lastdbg = millis();
   }
-
-  return err == AK09918_ERR_OK;
 }
+
+void imuloop() {
+    update9DOF();
+    delay(10);  // At most 100Hz update rate (calls yield)
+}
+
