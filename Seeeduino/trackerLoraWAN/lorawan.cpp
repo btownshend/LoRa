@@ -137,6 +137,15 @@ void loramsg(int n, unsigned char data[]) {
     lorawrite(fmtbuf);
   }
   msgsending = true;
+  unsigned long timeout = millis()+10000;   // Give 10s to get ack from module
+  while (msgsending && millis()<timeout) {
+      loraread();
+      delay(1);   // At 115,200 baud, 10 chars would take ~1ms
+  }
+  if (msgsending) {
+      SerialUSB.println("*** Timeout while sending message");
+      msgsending=false;
+  }
 }
 
 static int lastSend = 0;
