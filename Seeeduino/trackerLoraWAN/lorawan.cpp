@@ -339,9 +339,17 @@ void processLoRa(char *buf) {
     }
 }
 
+static char usercmd[100]="";
+
 void lorawanusercommand(const char *line) {
     // Command from serial port
-    lorawrite(line);   // TODO: should actually write this on the lora thread
+    if (usercmd[0] != '\0')
+	SerialUSB.println("*** Overrun of usercmd buf");
+    if (strlen(line) >= sizeof(usercmd)) {
+	SerialUSB.println("*** User command too long");
+	return;
+    }
+    strcpy(usercmd,line);
 }
 
 void lorawansetup(void) {
@@ -386,6 +394,14 @@ void lorawanloop(void)
 	margin -= 1; // In case we don't get a reply, slowly decrease our margin
 	return;
     }
+
+    // Any user commands (from terminal) to send?
+    if (usercmd[0]!='\0') {
+	lorawrite(usercmd);
+	usercmd[0]=0;
+	return;
+    }
+
     }
 
 
