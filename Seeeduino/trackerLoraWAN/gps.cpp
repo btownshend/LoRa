@@ -1,4 +1,5 @@
 #include "gps.h"
+#include "globals.h"
 
 TinyGPS gps;
 int gpsecho = 20;
@@ -58,4 +59,6 @@ void gpssetup() {
 void gpsloop() {
     getgps();
     yield();
+    // Check stack
+    static int minstack=100000; minstack=stackcheck("GPS",minstack);
 }

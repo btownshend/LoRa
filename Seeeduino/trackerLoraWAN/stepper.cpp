@@ -60,12 +60,5 @@ void stepperloop() {
     delay(100);
     //SerialUSB.println("stepperloop end");
     // Check stack
-    static int minstack=100000;
-    if (Scheduler.stack() < minstack) {
-	SerialUSB.print("Stepper stack decreased from ");
-	SerialUSB.print(minstack);
-	SerialUSB.print(" to ");
-	SerialUSB.println(Scheduler.stack());
-	minstack=Scheduler.stack();
-    }
+    static int minstack=100000; minstack=stackcheck("Stepper",minstack);
 }

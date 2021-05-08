@@ -377,13 +377,11 @@ void lorawanloop(void)
 	margin -= 1; // In case we don't get a reply, slowly decrease our margin
 	return;
     }
-    // Check stack
-    static int minstack=100000;
-    if (Scheduler.stack() < minstack) {
-	SerialUSB.print("LoRaWAN stack decreased from ");
-	SerialUSB.print(minstack);
-	SerialUSB.print(" to ");
-	SerialUSB.println(Scheduler.stack());
-	minstack=Scheduler.stack();
     }
+
+
+    // Check stack
+    static int minstack=100000; minstack=stackcheck("LoRaWAN",minstack);
+    // Nothing was done, can sleep a bit
+    delay(1);
 }

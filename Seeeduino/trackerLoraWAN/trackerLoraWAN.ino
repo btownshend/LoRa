@@ -38,6 +38,26 @@ void cmdread(void) {
   }
 }
 
+int stackcheck(const char *module, int minstack) {
+    // Check amount of stack space remaining
+    if (Scheduler.stack() < minstack) {
+	SerialUSB.print(module);
+	SerialUSB.print(": stack decreased from ");
+	SerialUSB.print(minstack);
+	SerialUSB.print(" to ");
+	SerialUSB.println(Scheduler.stack());
+	minstack=Scheduler.stack();
+    }
+    if (minstack<100) {
+	// Serious problem
+	SerialUSB.print(module);
+	SerialUSB.print(" stack overrun: ");
+	SerialUSB.print(minstack);
+	SerialUSB.println("remaining");
+    }
+    return minstack;
+}
+
 void setup(void) {
   SerialUSB.begin(115200);
 
