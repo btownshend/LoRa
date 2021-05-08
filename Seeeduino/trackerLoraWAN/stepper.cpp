@@ -40,7 +40,7 @@ void adjuststepper() {
     static unsigned long lastdbg = 0;
 
     if (millis() - lastdbg > 1000 ) {
-	sprintf(fmtbuf, "Roll: %d, Pitch: %d, Heading: %d, Field: %d", (int)(roll * 57.3),(int)( pitch * 57.3), (int)heading, (int)field);
+	sprintf(fmtbuf, "Roll: %.0f, Pitch: %.0f, Heading: %.0f, Field: %.0f", (roll * 57.3),( pitch * 57.3),heading, field);
 	SerialUSB.println(fmtbuf);
 	lastdbg = millis();
     }
