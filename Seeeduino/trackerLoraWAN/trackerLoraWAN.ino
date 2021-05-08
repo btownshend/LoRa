@@ -509,6 +509,7 @@ void send() {
   int sendStart = millis();
   loramsg(dptr - data, data);
   lastSend = millis();
+  SerialUSB.print("Send took "); Serial.print(lastSend - sendStart); Serial.println(" msec");
 }
 
 void cmdexec(char *buf) {
@@ -590,9 +591,8 @@ void loop(void)
 }
 
 void processMessage(int n, unsigned char *data) {
-  SerialUSB.print("processMessage(");
-  SerialUSB.print(n);
-  SerialUSB.println(")");
+  sprintf(fmtbuf, "processMessage(%d,0x%02x...)", n, data[0]);
+  SerialUSB.println(fmtbuf);
 }
 
 void processLoRa(char *buf) {
