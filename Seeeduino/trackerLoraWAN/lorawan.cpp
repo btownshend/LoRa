@@ -369,8 +369,11 @@ void lorawanloop(void)
     // Other tasks to do when LoRa is not busy
     if (islorabusy())
 	return;
+    
+    // Update module's battery level indication
     if (setmodulebatterylevel())
 	return;
+
     if (maxmsglen < 53) {
 	// Check if the maximum message length has increase
 	static unsigned long lastlenmsg = 0;
@@ -380,9 +383,12 @@ void lorawanloop(void)
 	    return;
 	}
     }
+
+    // Check if data rate needs to be changes
     if (setDR())
 	return;
 
+    // Request line update
     static unsigned long lastLCR = 0;
     if (millis() - lastLCR > 60000) {
 	lastLCR = millis();
