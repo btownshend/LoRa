@@ -61,11 +61,15 @@ nexttile;
 for i=1:length(udev)
   sel1=strcmp(udev{i},{loc.deviceName});
   sel=find(sel1 & ([loc.hdop]<1.2 | isnan([loc.hdop])));
-  sel=sel(1:ceil(length(sel)/50):end);
-  fprintf('%s keeping %d/%d GPS fixes\n', udev{i}, length(sel), sum(sel1));
-  h=plot([loc(sel).longitude]+rand(1,length(sel))*.0001-.00005,[loc(sel).latitude]+rand(1,length(sel))*.0001-.00005,'-');
+  ds=round(length(sel)/50);
+  lat=decimate([loc(sel).latitude],ds,'FIR');
+  long=decimate([loc(sel).longitude],ds,'FIR');
+  fprintf('%s keeping %d/%d GPS fixes downsampled by %f\n', udev{i}, length(sel), sum(sel1),ds);
+  %  h=plot(medfilt1([loc(sel).longitude],ds,'truncate')+rand(1,length(sel))*.0001-.00005,medfilt1([loc(sel).latitude],ds,'truncate')+rand(1,length(sel))*.0001-.00005,'-');
+  h=plot(long,lat,'-');
   hold on;
   plot(meanPos(i,2),meanPos(i,1),'o','MarkerSize',15,'LineWidth',2,'HandleVisibility','off','Color',get(h,'Color'));
+  keyboard;
 end
 plot(trimmean(gwlong,50),trimmean(gwlat,50),'ok','Markersize',15,'LineWidth',1,'HandleVisibility','off');
 legend(udev,'location','best');
