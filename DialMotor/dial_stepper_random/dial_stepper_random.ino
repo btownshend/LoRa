@@ -21,7 +21,7 @@ void setup()
   //stepper.setMaxSpeed(3600);
   //stepper.setAcceleration(9600);
   stepper.setMaxSpeed(3600);
-  stepper.setAcceleration(12000);
+  stepper.setAcceleration(12000/10);
 }
 
 void loop()
@@ -30,20 +30,21 @@ void loop()
   {
     // Random change to speed, position and acceleration
     // Make sure we dont get 0 speed or accelerations
-    delay(1);
+    delay(100);
     if (pause<20) {
       pause+=1;
       wiggle=-wiggle;
     } else {
       pause=0;
-      pos += (rand() % 2400) - 1200;
-      wiggle= (rand() % 50);
-      //Serial.println("");
+      //pos += (rand() % 2400) - 1200;
+      //wiggle= (rand() % 50);
+      pos+=720; wiggle=0;
+      Serial.println("");
     }
 
     stepper.moveTo(pos+wiggle);
-    //Serial.print(pos+wiggle);
-    //Serial.print(",");
+    Serial.print(pos+wiggle);
+    Serial.print(",");
   }
   stepper.run();
 }
