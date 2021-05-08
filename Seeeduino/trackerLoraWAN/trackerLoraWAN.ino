@@ -4,38 +4,17 @@
 #include "imu.h"
 #include "stepper.h"
 #include "globals.h"
+#include "battery.h"
 
 short myid = 1;
 char fmtbuf[200]; // Space to build formatted strings
 const int updateInterval = 10;   // Update interval in seconds
 
-// battey of Seeeduino LoRaWAN
-const int pin_battery_status  = A5;
-const int pin_battery_voltage = A4;
 bool msgsending = false;
 int maxmsglen = 53;
 int margin = 0;   // Assume 0dB margin to start
 unsigned long lorabusy = 0; // Time in msec that last lora cmd was sent -- avoid overrunning
 const int LORABUSYTIME = 10;  // Assume cmds take this long to run (msec)
-
-unsigned short batteryvoltage() {
-  // Not clear what pulling down the status pin is supposed to achieve
-  pinMode(pin_battery_status , OUTPUT);
-  digitalWrite(pin_battery_status , LOW);
-  delay(1);  /// This may cause issues with losing serial chars -- @115,200 1ms = 12 char
-  unsigned short battery = (analogRead(pin_battery_voltage) * 3300 * 11) >> 10;
-  pinMode(pin_battery_status , INPUT);
-
-  SerialUSB.print("Battery: ");
-  SerialUSB.println(battery);
-  return battery;
-}
-
-unsigned char batterystatus() {
-  // 0-charging, 1-onbattery
-  return digitalRead(pin_battery_status);
-}
-
 
 bool setmodulebatterylevel() {
   static unsigned long lasttime = 0;
@@ -80,8 +59,9 @@ void setup(void)
   imusetup();
   
   steppersetup();
-
-  pinMode(pin_battery_status, INPUT);
+  gpssetup();
+  batterysetup();
+  
   setDR();
   join();
   if (haveimu)
