@@ -1,6 +1,7 @@
 // Define a stepper and the pins it will use
 #include <AccelStepper.h>
 
+#include "globals.h"
 #include "stepper.h"
 #include "imu.h"
 

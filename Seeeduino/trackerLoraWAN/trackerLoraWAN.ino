@@ -3,9 +3,10 @@
 #include "gps.h"
 #include "imu.h"
 #include "stepper.h"
+#include "globals.h"
 
 short myid = 1;
-char fmtbuf[100];   // Space to build formatted strings
+char fmtbuf[200]; // Space to build formatted strings
 const int updateInterval = 10;   // Update interval in seconds
 
 // battey of Seeeduino LoRaWAN

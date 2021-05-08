@@ -3,9 +3,8 @@
 #include <Wire.h>
 // If there's a complie error in I2Cdev.cpp, need to add #define BUFFER_LENGTH 32 in I2Cdev.h in library
 
+#include "globals.h"
 #include "imu.h"
-
-extern char fmtbuf[];
 
 // 9DOF
 short acc_x, acc_y, acc_z;
@@ -134,4 +133,3 @@ void imuloop() {
     update9DOF();
     delay(10);  // At most 100Hz update rate (calls yield)
 }
-
