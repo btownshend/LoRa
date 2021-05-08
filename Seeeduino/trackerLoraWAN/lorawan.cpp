@@ -156,7 +156,9 @@ void send() {
   static unsigned char data[100];
   unsigned char *dptr = data;
 
-
+  if (sizeof(data)-1 < maxmsglen)
+      maxmsglen=sizeof(data)-1;   // Avoid overflows
+  
   gps.get_position(&lat, &lon, &age);  // lat, long are in units of degrees*1e6, age is in milliseconds
   if (age == gps.GPS_INVALID_AGE || age > 10000) {
     unsigned long chars;
