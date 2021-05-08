@@ -443,7 +443,7 @@ void send() {
     }
   }
 
-  if (maxmsglen > 50) {
+  if (maxmsglen > 6 + (dptr - data)) {
     // Get hdop and num sats
     unsigned long hdop = gps.hdop();
     unsigned short numsat = gps.satellites();
@@ -459,6 +459,7 @@ void send() {
     *dptr++ = ((unsigned char *)&mx)[1];
     *dptr++ = ((unsigned char *)&mx)[0];
 
+  if (maxmsglen > 4 + (dptr - data)) {
     // battery (not in RAK set, choose 0x0c,0x01)
     // status, then voltage
     unsigned char bs = batterystatus(); // 0-charging, 1-onbattery
@@ -468,6 +469,7 @@ void send() {
 
     *dptr++ = ((unsigned char *)&bv)[1];
     *dptr++ = ((unsigned char *)&bv)[0];
+  }
 
   if (update9DOF()) {
     if (maxmsglen > 12 + (dptr - data)) {
