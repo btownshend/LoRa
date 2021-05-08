@@ -305,7 +305,7 @@ bool getgps() {
   // Set lat, lon if found and return true, else false
   bool newData = false;
   static char gpsline[150];
-  static char gpslinelen = 0;
+  static unsigned int gpslinelen = 0;
 
   while (Serial2.available()) {
     char c = Serial2.read();
@@ -347,7 +347,7 @@ bool getgps() {
 void loraread() {
   // Parse all available data from LoRa module
   static char lorabuf[200];
-  static int lorabuflen = 0;
+  static unsigned int lorabuflen = 0;
 
   while (Serial1.available()) {
     char c = Serial1.read();
@@ -366,7 +366,7 @@ bool islorabusy() {
   return msgsending || Serial1.available() || (millis() - lorabusy < LORABUSYTIME);
 }
 
-void lorawrite(char *str) {
+void lorawrite(const char *str) {
   // Send null terminated string to LoRa module
   if (msgsending) {
     SerialUSB.println("*** lorawrite while msgsending is true; clearing");
@@ -528,7 +528,7 @@ void cmdexec(char *buf) {
 void cmdread(void) {
   // Listen for commands from serial port
   static char buf[100];
-  static int buflen = 0;
+  static unsigned int buflen = 0;
   while (SerialUSB.available()) {
     char c = SerialUSB.read();
     if (c == '\r' || c == '\n') {
@@ -613,7 +613,7 @@ void processLoRa(char *buf) {
     char *ptr = &buf[23];
     SerialUSB.println(*ptr, DEC);
     unsigned char data[100];
-    int n = 0;
+    unsigned int n = 0;
     for (; n < sizeof(data) && *ptr != '"' && *ptr && ptr[1]; n++, ptr += 2) {
       char tmp[3];
       tmp[0] = ptr[0]; tmp[1] = ptr[1]; tmp[2] = 0;
