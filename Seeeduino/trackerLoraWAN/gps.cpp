@@ -3,7 +3,7 @@
 TinyGPS gps;
 int gpsecho = 20;
 
-bool getgps() {
+void getgps() {
   // Parse any available data from GPS receiver
   // Set lat, lon if found and return true, else false
   bool newData = false;
@@ -43,6 +43,12 @@ bool getgps() {
         gpsline[gpslinelen++] = c;
     }
   }
-  return newData;
 }
 
+void gpssetup() {
+}
+
+void gpsloop() {
+    getgps();
+    yield();
+}

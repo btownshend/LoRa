@@ -87,6 +87,7 @@ void setup(void)
   if (haveimu)
     Scheduler.startLoop(imuloop);
   Scheduler.startLoop(stepperloop);
+  Scheduler.startLoop(gpsloop);
 }
 
 bool setDR() {
@@ -322,7 +323,6 @@ void cmdread(void) {
 void loop(void)
 {
 
-  getgps();
 
   if (millis() - lastSend > 1000 * updateInterval) {
     // Time to try sending

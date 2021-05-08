@@ -3,4 +3,5 @@
 extern TinyGPS gps;
 extern int gpsecho;
 
-bool getgps();
+extern void gpssetup();
+extern void gpsloop();
