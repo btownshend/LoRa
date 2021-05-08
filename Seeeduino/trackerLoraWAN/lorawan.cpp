@@ -327,8 +327,14 @@ void processLoRa(char *buf) {
 	msgsending = false;
     } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
 	;  // Ignore
+    } else if (strncmp(buf, "+LW: BAT", 8) == 0) {
+	;  // Ignore
+    } else if (strncmp(buf, "+LW: LCR", 8) == 0) {
+	;  // Ignore
+    } else if (strncmp(buf, "+DR: ",5) == 0) {
+	;  // Ignore
     } else {
-	SerialUSB.print("Unparsed message: ");
+	SerialUSB.print("*** Unparsed message: ");
 	SerialUSB.println(buf);
     }
 }
