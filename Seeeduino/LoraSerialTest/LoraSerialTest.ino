@@ -1,6 +1,6 @@
 void setup()
 {
-    Serial1.begin(9600);
+    Serial1.begin(115200);
     SerialUSB.begin(115200);
     for (int i=0;i<5;i++) {
       SerialUSB.print(i,DEC);
