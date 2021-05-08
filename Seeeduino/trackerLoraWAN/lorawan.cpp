@@ -144,7 +144,7 @@ static int lastSend = 0;
 void send() {
   long lat, lon;
   unsigned long age;
-  unsigned char data[100];
+  static unsigned char data[100];
   unsigned char *dptr = data;
 
 
@@ -269,7 +269,7 @@ void processLoRa(char *buf) {
   } else if (strncmp(buf, "+MSGHEX: PORT: 1; RX: \"", 23) == 0) {
     char *ptr = &buf[23];
     SerialUSB.println(*ptr, DEC);
-    unsigned char data[100];
+    static unsigned char data[100];
     unsigned int n = 0;
     for (; n < sizeof(data) && *ptr != '"' && *ptr && ptr[1]; n++, ptr += 2) {
       char tmp[3];
