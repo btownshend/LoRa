@@ -275,7 +275,7 @@ void processLoRa(char *buf) {
 	int len, rssi, snr;
 	int ns = sscanf(buf, "+TEST: LEN:%d, RSSI:%d, SNR:%d", &len, &rssi, &snr);
 	if (ns != 3)
-	    SerialUSB.println("Failed Len scan");
+	    SerialUSB.println("*** Failed Len scan");
 	else {
 	    sprintf(fmtbuf, "Len=%d, RSSI=%d, SNR=%d", len, rssi, snr);
 	    SerialUSB.println(fmtbuf);
@@ -306,14 +306,14 @@ void processLoRa(char *buf) {
     } else if (strncmp(buf, "+MSGHEX: RXWIN", 14) == 0) {
 	SerialUSB.println(&buf[14]);  // +MSGHEX: RXWIN1, RSSI -49, SNR 6.8
     } else if (strcmp(buf, "+MSGHEX: Please join network first") == 0) {
-	SerialUSB.println("Not joined");
+	SerialUSB.println("*** Not joined");
 	join();
     } else if (strcmp(buf, "+MSGHEX: Done") == 0) {
 	if (!msgsending)
-	    SerialUSB.println("MSGHEX done when msgsending was false");
+	    SerialUSB.println("*** MSGHEX done when msgsending was false");
 	msgsending = false;
     } else if (strncmp(buf, "+MSGHEX: Length error", 21) == 0) {
-	SerialUSB.print("Length error");
+	SerialUSB.print("*** Length error");
 	msgsending = false;
 	maxmsglen = atoi(&buf[22]); // Probably due to DR0 fallback
 	SerialUSB.print("Max message length: ");
@@ -323,7 +323,7 @@ void processLoRa(char *buf) {
 	SerialUSB.print("Link margin: ");
 	SerialUSB.println(margin);
     } else if (strncmp(buf, "+MSGHEX: No free channel", 24) == 0) {
-	SerialUSB.println("No free channel");
+	SerialUSB.println("*** No free channel");
 	msgsending = false;
     } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
 	;  // Ignore
