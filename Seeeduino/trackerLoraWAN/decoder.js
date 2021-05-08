@@ -66,9 +66,9 @@ function rakSensorDataDecode(hexStr) {
         str = str.substring(12);
         break;
       case 0x0371:// Triaxial acceleration
-        myObj.acceleration_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.001).toFixed(3));// + "g";//unit:g
-        myObj.acceleration_y = parseFloat((parseShort(str.substring(8, 12), 16) * 0.001).toFixed(3));// + "g";//unit:g
-        myObj.acceleration_z = parseFloat((parseShort(str.substring(12, 16), 16) * 0.001).toFixed(3));// + "g";//unit:g
+        myObj.acceleration_x = parseFloat((parseShort(str.substring(4, 8), 16) * 16/32767).toFixed(3));// + "g";//unit:g
+        myObj.acceleration_y = parseFloat((parseShort(str.substring(8, 12), 16) * 16/32767).toFixed(3));// + "g";//unit:g
+        myObj.acceleration_z = parseFloat((parseShort(str.substring(12, 16), 16) * 16/32767).toFixed(3));// + "g";//unit:g
         str = str.substring(16);
         break;
       case 0x0402:// air resistance
@@ -80,21 +80,21 @@ function rakSensorDataDecode(hexStr) {
         str = str.substring(8);
         break;
       case 0x0586:// gyroscope
-        myObj.gyroscope_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "°/s";//unit:°/s
-        myObj.gyroscope_y = parseFloat((parseShort(str.substring(8, 12), 16) * 0.01).toFixed(2));// + "°/s";//unit:°/s
-        myObj.gyroscope_z = parseFloat((parseShort(str.substring(12, 16), 16) * 0.01).toFixed(2));// + "°/s";//unit:°/s
+        myObj.gyroscope_x = parseFloat((parseShort(str.substring(4, 8), 16) * 2000/32767).toFixed(2));// + "°/s";//unit:°/s
+        myObj.gyroscope_y = parseFloat((parseShort(str.substring(8, 12), 16) *2000/32767).toFixed(2));// + "°/s";//unit:°/s
+        myObj.gyroscope_z = parseFloat((parseShort(str.substring(12, 16), 16) *2000/32767).toFixed(2));// + "°/s";//unit:°/s
         str = str.substring(16);
         break;
       case 0x0902:// magnetometer x
-        myObj.magnetometer_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "μT";//unit:μT
+        myObj.magnetometer_x = parseFloat((parseShort(str.substring(4, 8), 16) * 0.15).toFixed(2));// + "μT";//unit:μT
         str = str.substring(8);
         break;
       case 0x0a02:// magnetometer y
-        myObj.magnetometer_y = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "μT";//unit:μT
+        myObj.magnetometer_y = parseFloat((parseShort(str.substring(4, 8), 16) * 0.15).toFixed(2));// + "μT";//unit:μT
         str = str.substring(8);
         break;
       case 0x0b02:// magnetometer z
-        myObj.magnetometer_z = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "μT";//unit:μT
+        myObj.magnetometer_z = parseFloat((parseShort(str.substring(4, 8), 16) * 0.15).toFixed(2));// + "μT";//unit:μT
         str = str.substring(8);
         break;
       case 0x0c01: // battery
