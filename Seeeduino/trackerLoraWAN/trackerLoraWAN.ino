@@ -1,8 +1,9 @@
-#include <TinyGPS.h>
 #include "AK09918.h"
 #include "ICM20600.h"
 #include <Wire.h>
 // If there's a complie error in I2Cdev.cpp, need to add #define BUFFER_LENGTH 32 in I2Cdev.h in library
+
+#include "gps.h"
 
 #define ENABLESTEPPER
 // Define a stepper and the pins it will use
@@ -11,7 +12,6 @@
 AccelStepper stepper; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
 #endif
 
-TinyGPS gps;
 short myid = 1;
 char fmtbuf[100];   // Space to build formatted strings
 const int updateInterval = 10;   // Update interval in seconds
@@ -19,7 +19,6 @@ const int updateInterval = 10;   // Update interval in seconds
 // battey of Seeeduino LoRaWAN
 const int pin_battery_status  = A5;
 const int pin_battery_voltage = A4;
-int gpsecho = 20;
 bool msgsending = false;
 int maxmsglen = 53;
 int margin = 0;   // Assume 0dB margin to start
@@ -299,50 +298,6 @@ void join() {
   // TODO: Should verify response
   SerialUSB.println("Join request initiated");
 }
-
-bool getgps() {
-  // Parse any available data from GPS receiver
-  // Set lat, lon if found and return true, else false
-  bool newData = false;
-  static char gpsline[150];
-  static unsigned int gpslinelen = 0;
-
-  while (Serial2.available()) {
-    char c = Serial2.read();
-
-    if (gps.encode(c)) {
-      newData = true;
-    }
-
-    if (gpsecho > 0) {
-      if (c == '\r' || c == '\n') {
-        if (gpslinelen > 0) {
-          gpsline[gpslinelen] = 0;
-          SerialUSB.print("<GPS: ");
-          SerialUSB.print(gpsline);
-          if (gpslinelen == sizeof(gpsline) - 1 )
-            SerialUSB.print("<trunc> ");
-          if (Serial2.available() > 2) {
-            SerialUSB.print("<avail:");
-            SerialUSB.print(Serial2.available());
-            SerialUSB.print(">");
-          }
-          if (newData)
-            SerialUSB.println("<newdata>");
-          else
-            SerialUSB.println("");
-          gpslinelen = 0;
-          gpsecho--;
-          if (gpsecho == 0)
-            SerialUSB.println("Disabling GPS echo until next GPS command received");
-        }
-      } else if (gpslinelen < sizeof(gpsline) - 1 )
-        gpsline[gpslinelen++] = c;
-    }
-  }
-  return newData;
-}
-
 
 void loraread() {
   // Parse all available data from LoRa module
