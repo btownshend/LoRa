@@ -45,7 +45,14 @@ void getgps() {
   }
 }
 
+void gpsusercommand(const char *buf) {
+    gpsecho = 20;  // Enable echo of GPS messages
+    if (buf[0])
+	Serial2.println(buf);
+}
+
 void gpssetup() {
+    Serial2.begin(9600);
 }
 
 void gpsloop() {
