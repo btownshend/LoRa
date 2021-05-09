@@ -6,6 +6,7 @@
 #include "globals.h"
 #include "battery.h"
 #include "lorawan.h"
+#include "loadmonitor.h"
 
 char fmtbuf[200]; // Space to build formatted strings
 
@@ -75,6 +76,7 @@ void setup(void) {
   Scheduler.startLoop(stepperloop,2048);
   Scheduler.startLoop(gpsloop);
   Scheduler.startLoop(lorawanloop,2048);  // Needs more than 1024 bytes of stack space or sprintf causes problem
+  Scheduler.startLoop(loadmonitorloop);
 }
 
 void loop(void) {
