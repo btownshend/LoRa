@@ -52,6 +52,13 @@ void imusetup() {
   }
 
 bool updateMag(void) {
+    AK09918_err_type_t err = ak09918.isDataReady();
+    if (err==AK09918_ERR_NOT_RDY)
+	return false;
+    else if (err != AK09918_ERR_OK ) {
+	SerialUSB.print("AK09918.isDataReady() -> 0x");
+	SerialUSB.println(err,HEX);
+    }
     int32_t x, y, z;
     err = ak09918.getRawData(&x, &y, &z);  // raw data is in units of 0.15uT
     //mag_x = x; mag_y = y; mag_z = z;
