@@ -1,3 +1,3 @@
 extern char fmtbuf[];
 
-extern int stackcheck(const char *module, int minstack);
+extern unsigned int stackcheck(const char *module, unsigned int minstack);

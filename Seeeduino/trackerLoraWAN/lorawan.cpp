@@ -159,7 +159,7 @@ void send() {
     static unsigned char data[100];
     unsigned char *dptr = data;
 
-    if (sizeof(data)-1 < maxmsglen)
+    if ((int)sizeof(data)-1 < maxmsglen)
 	maxmsglen=sizeof(data)-1;   // Avoid overflows
   
     gps.get_position(&lat, &lon, &age);  // lat, long are in units of degrees*1e6, age is in milliseconds
@@ -375,7 +375,7 @@ void lorawanloop(void)
 	return;
 
     if (maxmsglen < 53) {
-	// Check if the maximum message length has increase
+	// Check if the maximum message length has increased
 	static unsigned long lastlenmsg = 0;
 	if (millis() - lastlenmsg > 5000) {
 	    lorawrite("AT+LW=LEN");

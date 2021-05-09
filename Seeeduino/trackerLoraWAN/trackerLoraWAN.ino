@@ -39,7 +39,7 @@ void cmdread(void) {
   }
 }
 
-int stackcheck(const char *module, int minstack) {
+unsigned int stackcheck(const char *module, unsigned int minstack) {
     // Check amount of stack space remaining
     if (Scheduler.stack() < minstack) {
 	SerialUSB.print(module);
