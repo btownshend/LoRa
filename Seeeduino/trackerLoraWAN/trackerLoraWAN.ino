@@ -72,7 +72,7 @@ void setup(void) {
   lorawansetup();
   
   if (haveimu)
-      Scheduler.startLoop(imuloop);
+      Scheduler.startLoop(imuloop,2048);
   Scheduler.startLoop(stepperloop,2048);
   Scheduler.startLoop(gpsloop);
   Scheduler.startLoop(lorawanloop,2048);  // Needs more than 1024 bytes of stack space or sprintf causes problem
