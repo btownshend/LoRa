@@ -38,8 +38,8 @@ void stepperloop() {
     //SerialUSB.println("stepperloop");
     adjuststepper();
     stepper.run();
-    delay(100);
     //SerialUSB.println("stepperloop end");
     // Check stack
     static int minstack=100000; minstack=stackcheck("Stepper",minstack);
+    yield();
 }
