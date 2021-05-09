@@ -35,6 +35,7 @@ void imusetup() {
       return;
     }
 
+    delay(100);
     err = ak09918.selfTest();
     if (err != AK09918_ERR_OK) {
       Serial.print("Error in selfTest of AK09918: 0x");
@@ -124,10 +125,35 @@ void update9DOF() {
   static unsigned long lastdbg = 0;
 
   if (millis() - lastdbg > 1000 ) {
-    sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z);
-    SerialUSB.println(fmtbuf);
-    lastdbg = millis();
+      double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
+      sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field);
+      SerialUSB.println(fmtbuf);
+      lastdbg = millis();
   }
+}
+
+float getHeading(void) {
+    // Get current heading in degrees
+
+    // roll/pitch in radian
+    double roll = atan2((float)acc_y, (float)acc_z);
+    double pitch = atan2(-(float)acc_x, sqrt((float)acc_y * acc_y + (float)acc_z * acc_z));
+
+    double Xheading = mag_x * cos(pitch) + mag_y * sin(roll) * sin(pitch) + mag_z * cos(roll) * sin(pitch);
+    double Yheading = mag_y * cos(roll) - mag_z * sin(pitch);
+
+    const double declination = -6;   // Magnetic declination
+    float heading = 180 + 57.3 * atan2(Yheading, Xheading) + declination;
+    
+    static unsigned long lastdbg = 0;
+
+    if (millis() - lastdbg > 1000 ) {
+	sprintf(fmtbuf, "Roll: %.0f, Pitch: %.0f, Heading: %.0f", (roll * 57.3),( pitch * 57.3),heading);
+	SerialUSB.println(fmtbuf);
+	lastdbg = millis();
+    }
+
+    return heading;
 }
 
 void imuloop() {

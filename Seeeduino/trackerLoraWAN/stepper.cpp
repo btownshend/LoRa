@@ -22,28 +22,9 @@ void gotoangle(float angle) {
 
 void adjuststepper() {
     // Adjust stepper accordinly
-    // roll/pitch in radian
-    double roll = atan2((float)acc_y, (float)acc_z);
-    double pitch = atan2(-(float)acc_x, sqrt((float)acc_y * acc_y + (float)acc_z * acc_z));
-
-    double Xheading = mag_x * cos(pitch) + mag_y * sin(roll) * sin(pitch) + mag_z * cos(roll) * sin(pitch);
-    double Yheading = mag_y * cos(roll) - mag_z * sin(pitch);
-
-    const double declination = -6;   // Magnetic declination
-    double heading = 180 + 57.3 * atan2(Yheading, Xheading) + declination;
-    //double heading = 180 + 57.3 * atan2(mag_y, mag_x) + declination;
-
-    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
-
-    gotoangle(heading);
-
-    static unsigned long lastdbg = 0;
-
-    if (millis() - lastdbg > 1000 ) {
-	sprintf(fmtbuf, "Roll: %.0f, Pitch: %.0f, Heading: %.0f, Field: %.0f", (roll * 57.3),( pitch * 57.3),heading, field);
-	SerialUSB.println(fmtbuf);
-	lastdbg = millis();
-    }
+    float heading = getHeading();
+    
+    gotoangle(-heading);
 }
 
 void steppersetup() {
