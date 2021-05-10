@@ -6,15 +6,18 @@
 
 #include "globals.h"
 #include "imu.h"
+#include "ui.h"
 
 // 9DOF
 short acc_x, acc_y, acc_z;
 short gyro_x, gyro_y, gyro_z;
-short mag_x, mag_y, mag_z;
+short rawmag_x, rawmag_y, rawmag_z;  // As read from AK09918
+short mag_x, mag_y, mag_z;  // After low pass filtering and scaling
 bool haveimu = false;
+float mag_offset[3];
+float mag_mat[3][3];
 
 // Private
-static bool initialized = false;
 static AK09918 ak09918;
 static ICM20600 icm20600(true);
 
@@ -61,33 +64,38 @@ bool updateMag(void) {
     }
     int32_t x, y, z;
     err = ak09918.getRawData(&x, &y, &z);  // raw data is in units of 0.15uT
-    //mag_x = x; mag_y = y; mag_z = z;
-    mag_x = x; mag_y = z; mag_z = -y;  // Module is mounted on side
+    if (err !=  AK09918_ERR_OK) {
+	Serial.print("getRawData err: 0x");
+	Serial.println(err, HEX);
+	return false;
+    }
+    //rawmag_x = x; rawmag_y = y; rawmag_z = z;
+    rawmag_x = x; rawmag_y = z; rawmag_z = -y;  // Module is mounted on side
 
     static short mag_xmin = -100, mag_xmax = 100, mag_ymin = -100, mag_ymax = 100, mag_zmin = -100, mag_zmax = 100;
     bool changed = false;
-    if (mag_x < mag_xmin) {
-	mag_xmin = mag_x;
+    if (rawmag_x < mag_xmin) {
+	mag_xmin = rawmag_x;
 	changed = true;
     }
-    if (mag_x > mag_xmax) {
-	mag_xmax = mag_x;
+    if (rawmag_x > mag_xmax) {
+	mag_xmax = rawmag_x;
 	changed = true;
     }
-    if (mag_y < mag_ymin) {
-	mag_ymin = mag_y;
+    if (rawmag_y < mag_ymin) {
+	mag_ymin = rawmag_y;
 	changed = true;
     }
-    if (mag_y > mag_ymax) {
-	mag_ymax = mag_y;
+    if (rawmag_y > mag_ymax) {
+	mag_ymax = rawmag_y;
 	changed = true;
     }
-    if (mag_z < mag_zmin) {
-	mag_zmin = mag_z;
+    if (rawmag_z < mag_zmin) {
+	mag_zmin = rawmag_z;
 	changed = true;
     }
-    if (mag_z > mag_zmax) {
-	mag_zmax = mag_z;
+    if (rawmag_z > mag_zmax) {
+	mag_zmax = rawmag_z;
 	changed = true;
     }
     static float scale_x = 1, scale_y = 1, scale_z = 1;
@@ -111,16 +119,14 @@ bool updateMag(void) {
 	sprintf(fmtbuf, "Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
 	SerialUSB.println(fmtbuf);
     }
-    mag_x = (short)((mag_x - offset_x) * scale_x);
-    mag_y = (short)((mag_y - offset_y) * scale_y);
-    mag_z = (short)((mag_z - offset_z) * scale_z);
+    rawmag_x = (short)((rawmag_x - offset_x) * scale_x);
+    rawmag_y = (short)((rawmag_y - offset_y) * scale_y);
+    rawmag_z = (short)((rawmag_z - offset_z) * scale_z);
 
-
-    if (err !=  AK09918_ERR_OK) {
-	Serial.print("getRawData err: 0x");
-	Serial.println(err, HEX);
-	return false;
-    }
+    // Average to form mag_*
+    mag_x-=(mag_x - rawmag_x*100)/100;
+    mag_y-=(mag_y-  rawmag_y*100)/100;
+    mag_z-=(mag_z- rawmag_z*100)/100;
     //mag_x *= 15;  mag_y *= 15;  mag_z *= 15; // Now in .01 uT
     return true;
 }
@@ -135,18 +141,40 @@ void updateAccGyro() {
     gyro_y = icm20600.getRawGyroscopeZ();
 }
 
-void update9DOF() {
+void detectGestures() {
+    // Detect taps on the size
+    static unsigned long lasttap=0;  // Time in ms of last tap
+    static int nstill = 0;   // Number of samples of no external acceleration
+    static float tilt = 0;  // Tilt in degrees (0=lying flat)
+    const float tapaccel = 0.5f;  // Minimum tap acceleration
+    const float stillaccel = 0.1f;  // External acceleration less than this to be considered still
+    const float minstill = 5;   // Number of samples that must be still before tap
+    const int holdoff = 100;  // Hold-off in msec before another tap is recognized
+    float acc_mag = sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y+1.0f*acc_z*acc_z)/2048;
+    float external = fabs(acc_mag-1);
+    if (external>=tapaccel && nstill>=minstill && millis()-lasttap> holdoff) {
+	// New tap
+	sprintf(fmtbuf,"TAP: acc=%.1f, nstill=%d, tilt=%.0f",external, nstill, tilt);
+	SerialUSB.println(fmtbuf);
+	uitap(tilt);
+    }
+
+    if (external<stillaccel) {
+	float xymag=sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y);
+	tilt= atan2(xymag,1.0f*acc_z)*57.3;
+	nstill++;
+    } else
+	nstill=0;
+}
+
+bool update9DOF() {
     updateAccGyro();
     if (updateMag()) {
-	static unsigned long lastdbg = 0;
-
-	if (millis() - lastdbg > 1000 ) {
-	    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
-	    sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field);
-	    SerialUSB.println(fmtbuf);
-	    lastdbg = millis();
-	}
+	// The mag update also sets the update rate in general
+	detectGestures();
+	return true;
     }
+    return false;
 }
 
 float getHeading(void) {
@@ -175,7 +203,19 @@ float getHeading(void) {
 
 void imuloop() {
     update9DOF();
-    delay(10);  // At most 100Hz update rate (calls yield)
+    static unsigned long lastdbg = 0;
+
+    if (millis() - lastdbg > 1000 ) {
+	double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
+	sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field);
+	SerialUSB.println(fmtbuf);
+	lastdbg = millis();
+    }
+
+    //    delay(10);  // At most 100Hz update rate (calls yield)
   // Check stack
   static int minstack=100000; minstack=stackcheck("IMU",minstack);
+  yield();
+}
+
 }
