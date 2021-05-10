@@ -17,6 +17,8 @@ void cmdexec(char *buf) {
       lorawanusercommand(buf+1);
   else if (buf[0] == 'G')
       gpsusercommand(buf+1);
+  else if (buf[0]=='I')
+       imucommand(buf+1);
  else
     SerialUSB.println("Expected (L)ora or (G)PS command");
 }

@@ -218,4 +218,45 @@ void imuloop() {
   yield();
 }
 
+void imumonitor() {
+    // Go into IMU monitoring until another character is received
+    // Do not call yield or delay or another task will execute
+    SerialUSB.println("+++IMON+++");
+    while (SerialUSB.available())
+	SerialUSB.read();
+    while (true) {
+	if (update9DOF())  {
+	    sprintf(fmtbuf,"Raw:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, rawmag_x, rawmag_y, rawmag_z);
+	    SerialUSB.println(fmtbuf);
+	}
+	if (SerialUSB.available()) {
+	    int c=SerialUSB.read();
+	    SerialUSB.print("Got: ");
+	    SerialUSB.println(c);
+	    if (c=='x')
+		break;
+	}
+    }
+    SerialUSB.println("+++END+++");
+}
+
+void imucommand(const char *cmd) {
+    if (strcmp(cmd,"MON"))
+	imumonitor();
+    else if (strncmp(cmd,"MAGSET",6)) {
+	float offset[3], mat[3][3];
+	int nr=sscanf(buf,"MAGSET %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+		      &mag_offset[0],&mag_offset[1],&mag_offset[2],
+		      &mag_mat[0][0],&mag_mat[0][1],&mag_mat[0][2],
+		      &mag_mat[1][0],&mag_mat[1][1],&mag_mat[1][2],
+		      &mag_mat[2][0],&mag_mat[2][1],&mag_mat[2][2]);
+	if (nr==12) {
+	    saveMagCalibration();
+	} else {
+	    SerialUSB.print("MAGSET only parsed ");
+	    SerialUSB.print(nr);
+	    SerialUSB.println("/12 fields");
+	}
+    } else
+	SerialUSB.println("Unexpected IMU command");
 }

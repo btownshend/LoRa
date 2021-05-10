@@ -8,4 +8,4 @@ extern bool haveimu;
 extern void imusetup();
 extern void imuloop();
 extern float getHeading(void);
-
+extern void imucommand(const char *cmd);
