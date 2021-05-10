@@ -5,6 +5,7 @@
 #include "globals.h"
 #include "stepper.h"
 #include "imu.h"
+#include "ui.h"
 
 AccelStepper stepper; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
 
@@ -21,16 +22,29 @@ void gotoangle(float angle) {
 }
 
 void adjuststepper() {
-    // Adjust stepper accordinly
-    float heading = getHeading();
+    if (uimode) {
+	gotoangle(getuipos());
+    } else {
+	// Adjust stepper accordinly
+	static float priorHeading = 0;
+	float heading = getHeading();
     
-    gotoangle(-heading);
+	if (abs(heading-priorHeading)>=5)  {
+	    priorHeading=heading;
+	    gotoangle(-heading);
+	}
+    }
 }
 
 void steppersetup() {
-    stepper.setMaxSpeed(3600);
-    stepper.setAcceleration(12000 / 100);
-    SerialUSB.println("steppersetup done");
+    const int maxspeed=1200; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s;  use half that
+    const int maxaccel=1000;  
+    stepper.setMaxSpeed(maxspeed);  
+    stepper.setAcceleration(maxaccel);   // Acceleration tuned for the right "look" (4000 step/s/s will get it up to vmax after rotating 90 deg, but seems to lose steps then)
+    float tmax=maxspeed/maxaccel;
+    float degmax=maxaccel*tmax*tmax/2;
+    sprintf(fmtbuf,"Stepper setup to reach max speed of %.0f deg/sec after %.2f sec, %.0f degrees of rotation", maxspeed/2, tmax, degmax);
+    SerialUSB.println(fmtbuf);
 }
 
 void stepperloop() {
