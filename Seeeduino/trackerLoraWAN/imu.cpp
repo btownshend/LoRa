@@ -51,8 +51,34 @@ void imusetup() {
     ak09918.switchMode(AK09918_CONTINUOUS_100HZ);
     delay(100);
     SerialUSB.println("9DOF Initialized");
+    loadMagCalibration();
     haveimu=true;
   }
+
+void saveMagCalibration(void) {
+    int addr=0;
+    EEPROM.write(addr++,0x73);   // Magic
+    for (int i=0;i<sizeof(mag_offset);i++)
+	EEPROM.write(addr++,((uint8*)mag_offset)[i]);
+    for (int i=0;i<sizeof(mag_mat);i++)
+	EEPROM.write(addr++,((uint8*)mag_mat)[i]);
+    SerialUSB.print("Mag calibration saved at 0x0-0x");
+    SerialUSB.println(addr-1,HEX);
+}
+
+void loadMagCalibration(void) {
+    int addr=0;
+    uint8 magic=EEPROM.read(addr++);
+    if (magic!= 0x73) {
+	SerialUSB.println("EEPROM magcal magic not set");
+	return;
+    }
+    for (int i=0;i<sizeof(mag_offset);i++)
+	((uint8*)mag_offset)[i]=EEPROM.read(addr++);
+    for (int i=0;i<sizeof(mag_mat);i++)
+	((uint8*)mag_mat)[i]=EEPROM.read(addr++);
+    SerialUSB.println("Mag calibration loaded");
+}
 
 bool updateMag(void) {
     AK09918_err_type_t err = ak09918.isDataReady();
