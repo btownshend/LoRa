@@ -1,4 +1,5 @@
 #include <Scheduler.h>
+#include <FlashStorage.h>
 #include "AK09918.h"
 #include "ICM20600.h"
 #include <Wire.h>
@@ -14,13 +15,19 @@ short gyro_x, gyro_y, gyro_z;
 short rawmag_x, rawmag_y, rawmag_z;  // As read from AK09918
 short mag_x, mag_y, mag_z;  // After low pass filtering and scaling
 bool haveimu = false;
-float mag_offset[3];
-float mag_mat[3][3];
+typedef struct {
+    // Calibration of magnetometer
+    // Calibrated val = (raw-offset)*mat
+    float offset[3];
+    float mat[3][3];   // calibration matrix,  mat[ij][j] is row i, col j
+} magCalType;
+
+FlashStorage(calStorage, magCalType);
+static magCalType magCal;
 
 // Private
 static AK09918 ak09918;
 static ICM20600 icm20600(true);
-
 
 void imusetup() {
     SerialUSB.println("imusetup");
@@ -51,34 +58,13 @@ void imusetup() {
     ak09918.switchMode(AK09918_CONTINUOUS_100HZ);
     delay(100);
     SerialUSB.println("9DOF Initialized");
-    loadMagCalibration();
+
+    magCal = calStorage.read();
+    if (magCal.offset[0]==0.0) {
+	SerialUSB.println("No magnetic calibration available - defaulting to self-calibration");
+    }
     haveimu=true;
   }
-
-void saveMagCalibration(void) {
-    int addr=0;
-    EEPROM.write(addr++,0x73);   // Magic
-    for (int i=0;i<sizeof(mag_offset);i++)
-	EEPROM.write(addr++,((uint8*)mag_offset)[i]);
-    for (int i=0;i<sizeof(mag_mat);i++)
-	EEPROM.write(addr++,((uint8*)mag_mat)[i]);
-    SerialUSB.print("Mag calibration saved at 0x0-0x");
-    SerialUSB.println(addr-1,HEX);
-}
-
-void loadMagCalibration(void) {
-    int addr=0;
-    uint8 magic=EEPROM.read(addr++);
-    if (magic!= 0x73) {
-	SerialUSB.println("EEPROM magcal magic not set");
-	return;
-    }
-    for (int i=0;i<sizeof(mag_offset);i++)
-	((uint8*)mag_offset)[i]=EEPROM.read(addr++);
-    for (int i=0;i<sizeof(mag_mat);i++)
-	((uint8*)mag_mat)[i]=EEPROM.read(addr++);
-    SerialUSB.println("Mag calibration loaded");
-}
 
 bool updateMag(void) {
     AK09918_err_type_t err = ak09918.isDataReady();
@@ -145,11 +131,29 @@ bool updateMag(void) {
 	sprintf(fmtbuf, "Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
 	SerialUSB.println(fmtbuf);
     }
-    rawmag_x = (short)((rawmag_x - offset_x) * scale_x);
-    rawmag_y = (short)((rawmag_y - offset_y) * scale_y);
-    rawmag_z = (short)((rawmag_z - offset_z) * scale_z);
+    if (magCal.offset[0]==0.0) {
+	// internal calibration
+	mag_x = (short)((rawmag_x - offset_x) * scale_x);
+	mag_y = (short)((rawmag_y - offset_y) * scale_y);
+	mag_z = (short)((rawmag_z - offset_z) * scale_z);
+    } else {
+	// stored calibration
+	float c[3];
+	c[0]=rawmag_x-magCal.offset[0];
+	c[1]=rawmag_y-magCal.offset[1];
+	c[2]=rawmag_z-magCal.offset[2];
+	mag_x = (short)(c[0]*magCal.mat[0][0]+c[1]*magCal.mat[1][0]+c[2]*magCal.mat[2][0]);
+	mag_y = (short)(c[0]*magCal.mat[0][1]+c[1]*magCal.mat[1][1]+c[2]*magCal.mat[2][1]);
+	mag_z = (short)(c[0]*magCal.mat[0][2]+c[1]*magCal.mat[1][2]+c[2]*magCal.mat[2][2]);
+	static unsigned long lastdebug=0;
+	if (millis()-lastdebug>5000) {
+	    sprintf(fmtbuf,"raw=[%d,%d,%d], calib=[%d,%d,%d]",rawmag_x,rawmag_y,rawmag_z,mag_x,mag_y,mag_z);
+	    SerialUSB.println(fmtbuf);
+	    lastdebug=millis();
+	}
+    }
 
-    // Average to form mag_*
+    // Exponential average and scale up 100x
     mag_x-=(mag_x - rawmag_x*100)/100;
     mag_y-=(mag_y-  rawmag_y*100)/100;
     mag_z-=(mag_z- rawmag_z*100)/100;
@@ -267,17 +271,18 @@ void imumonitor() {
 }
 
 void imucommand(const char *cmd) {
-    if (strcmp(cmd,"MON"))
+    if (strcmp(cmd,"MON")==0)
 	imumonitor();
-    else if (strncmp(cmd,"MAGSET",6)) {
+    else if (strncmp(cmd,"MAGSET",6)==0) {
 	float offset[3], mat[3][3];
-	int nr=sscanf(buf,"MAGSET %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
-		      &mag_offset[0],&mag_offset[1],&mag_offset[2],
-		      &mag_mat[0][0],&mag_mat[0][1],&mag_mat[0][2],
-		      &mag_mat[1][0],&mag_mat[1][1],&mag_mat[1][2],
-		      &mag_mat[2][0],&mag_mat[2][1],&mag_mat[2][2]);
+	int nr=sscanf(cmd,"MAGSET %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+		      &magCal.offset[0],&magCal.offset[1],&magCal.offset[2],
+		      &magCal.mat[0][0],&magCal.mat[0][1],&magCal.mat[0][2],
+		      &magCal.mat[1][0],&magCal.mat[1][1],&magCal.mat[1][2],
+		      &magCal.mat[2][0],&magCal.mat[2][1],&magCal.mat[2][2]);
 	if (nr==12) {
-	    saveMagCalibration();
+	    calStorage.write(magCal);
+	    SerialUSB.println("MAGSET ok");
 	} else {
 	    SerialUSB.print("MAGSET only parsed ");
 	    SerialUSB.print(nr);
