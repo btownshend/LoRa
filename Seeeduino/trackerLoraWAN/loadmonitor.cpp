@@ -9,7 +9,7 @@ void loadmonitorloop(void) {
     unsigned long now=micros();
 
     unsigned int interval=(unsigned int)(now-lasttime);
-    if (interval>9000) {
+    if (interval>10000) {
 	SerialUSB.print("Loop: ");
 	SerialUSB.println(interval);
     }
