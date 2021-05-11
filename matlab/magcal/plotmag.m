@@ -20,3 +20,5 @@ fprintf('Cal Mag total = %.0f+/-%.0f\n', mean(calmtotal), std(calmtotal));
 
 hold on;
 plot3(calmag(:,1),calmag(:,2),calmag(:,3),'o');
+
+cal=struct('A',A,'b',b);

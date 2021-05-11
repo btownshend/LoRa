@@ -5,6 +5,20 @@ classdef ardserial < handle
   
   methods
     function obj=ardserial(devname)
+      if nargin<1 || isempty(devname)
+        devname='';
+        devs=serialportlist();
+        for i=1:length(devs)
+          if strncmp(devs{i},'/dev/cu.usbmodem',16)
+            devname=devs{i};
+            break;
+          end
+        end
+        if isempty(devname)
+          error('No device given and no matching device found');
+        end
+      end
+      fprintf('Opening %s\n',devname);
       obj.port=serialport(devname,115200);
       if isempty(obj.port)
         error('Failed open of %s',devname);
@@ -28,6 +42,9 @@ classdef ardserial < handle
     end
     
     function writeline(obj,line)
+      if length(line)>99
+        error('board only supports line <100 chars');
+      end
       obj.port.writeline(line);
     end
     
@@ -80,6 +97,20 @@ classdef ardserial < handle
       end
       obj.writeline('x');
       obj.waitfor('+++END+++',5);
+    end
+    
+    function savecal(obj,b,A)
+      buf=sprintf('IMAGSET %s',sprintf('%.3f,',b,A));
+      buf=buf(1:end-1);
+      obj.writeline(buf);
+      obj.waitfor('MAGSET ok',1);
+    end
+
+    function monitor(obj)
+      while true
+        data=obj.readline();
+        fprintf('%s\n',data);
+      end
     end
   end
   
