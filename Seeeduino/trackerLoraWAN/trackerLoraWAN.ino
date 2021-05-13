@@ -78,7 +78,12 @@ void setup(void) {
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
 
+#ifdef EXTERNALGPS
+       // Serial3 begin done in gpssetup()
+#else
 	Serial3.begin(9600);
+#endif	
+  
   imusetup();
   steppersetup();
   gpssetup();

@@ -11,8 +11,8 @@ void getgps() {
   static char gpsline[150];
   static unsigned int gpslinelen = 0;
 
-  while (Serial2.available()) {
-    char c = Serial2.read();
+  while (SerialGPS.available()) {
+    char c = SerialGPS.read();
 
     if (gps.encode(c)) {
       newData = true;
@@ -26,9 +26,9 @@ void getgps() {
           SerialUSB.print(gpsline);
           if (gpslinelen == sizeof(gpsline) - 1 )
             SerialUSB.print("<trunc> ");
-          if (Serial2.available() > 2) {
+          if (SerialGPS.available() > 2) {
             SerialUSB.print("<avail:");
-            SerialUSB.print(Serial2.available());
+            SerialUSB.print(SerialGPS.available());
             SerialUSB.print(">");
           }
           if (newData)
@@ -49,11 +49,11 @@ void getgps() {
 void gpsusercommand(const char *buf) {
     gpsecho = 20;  // Enable echo of GPS messages
     if (buf[0])
-	Serial2.println(buf);
+	SerialGPS.println(buf);
 }
 
 void gpssetup() {
-    Serial2.begin(9600);
+    SerialGPS.begin(9600);
 }
 
 void gpsloop() {
