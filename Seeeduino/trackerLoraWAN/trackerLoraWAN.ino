@@ -8,6 +8,17 @@
 #include "lorawan.h"
 #include "loadmonitor.h"
 
+// Add Serial3 using SERCOM2
+#include "wiring_private.h" // pinPeripheral() function
+
+#define PIN_SERIAL3_RX       (5ul)   // PA15 SERCOM2:pad3  (D5 on connector)
+#define PIN_SERIAL3_TX       (4ul)   // PA14 SERCOM2:pad2  (D4 on connector)
+Uart Serial3( &sercom2, PIN_SERIAL3_RX, PIN_SERIAL3_TX, SERCOM_RX_PAD_3, UART_TX_PAD_2 ) ;
+
+void SERCOM2_Handler() {
+  Serial3.IrqHandler();
+}
+
 char fmtbuf[200]; // Space to build formatted strings
 
 void cmdexec(char *buf) {
@@ -67,11 +78,16 @@ void setup(void) {
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
 
+	Serial3.begin(9600);
   imusetup();
   steppersetup();
   gpssetup();
   batterysetup();
   lorawansetup();
+
+    // Change PA14,PA15 to SERCOM (mode C) (AFTER Serial3.begin)
+  pinPeripheral(PIN_SERIAL3_RX, PIO_SERCOM);
+  pinPeripheral(PIN_SERIAL3_TX, PIO_SERCOM);
   
   if (haveimu)
       Scheduler.startLoop(imuloop,2048);
