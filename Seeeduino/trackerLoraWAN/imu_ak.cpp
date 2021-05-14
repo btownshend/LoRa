@@ -1,3 +1,5 @@
+#include "globals.h"
+#ifdef IMU_AK
 #include <Scheduler.h>
 #include <FlashStorage.h>
 #include "AK09918.h"
@@ -5,7 +7,6 @@
 #include <Wire.h>
 // If there's a complie error in I2Cdev.cpp, need to add #define BUFFER_LENGTH 32 in I2Cdev.h in library
 
-#include "globals.h"
 #include "imu.h"
 #include "ui.h"
 
@@ -291,3 +292,4 @@ void imucommand(const char *cmd) {
     } else
 	SerialUSB.println("Unexpected IMU command");
 }
+#endif /* IMU_AK */

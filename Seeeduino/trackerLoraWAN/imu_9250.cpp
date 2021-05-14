@@ -1,12 +1,12 @@
+#include "globals.h"
+#ifdef IMU_9250
+
 #include <Scheduler.h>
 #include <FlashStorage.h>
-#include "AK09918.h"
-#include "ICM20600.h"
+#include <SparkFunMPU9250-DMP.h>
 #include <Wire.h>
 // If there's a complie error in I2Cdev.cpp, need to add #define BUFFER_LENGTH 32 in I2Cdev.h in library
 
-#include "globals.h"
-#include "imu.h"
 #include "ui.h"
 
 // 9DOF
@@ -26,8 +26,7 @@ FlashStorage(calStorage, magCalType);
 static magCalType magCal;
 
 // Private
-static AK09918 ak09918;
-static ICM20600 icm20600(true);
+static MPU9250_DMP imu;
 
 void imusetup() {
     SerialUSB.println("imusetup");
@@ -38,25 +37,65 @@ void imusetup() {
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
 
-    AK09918_err_type_t err = ak09918.initialize();
-    if (err != AK09918_ERR_OK) {
-      Serial.print("Error initializing AK09918: 0x");
-      Serial.println(err, HEX);
-      return;
+    // Call imu.begin() to verify communication with and
+    // initialize the MPU-9250 to it's default values.
+    // Most functions return an error code - INV_SUCCESS (0)
+    // indicates the IMU was present and successfully set up
+    if (imu.begin() != INV_SUCCESS) {
+	SerialUSB.println("Unable to communicate with MPU-9250");
+	SerialUSB.println("Check connections, and try again.");
+	return;
     }
 
-    delay(100);
-    err = ak09918.selfTest();
-    if (err != AK09918_ERR_OK) {
-      Serial.print("Error in selfTest of AK09918: 0x");
-      Serial.println(err, HEX);
-      return;
-    }
+    // Use setSensors to turn on or off MPU-9250 sensors.
+    // Any of the following defines can be combined:
+    // INV_XYZ_GYRO, INV_XYZ_ACCEL, INV_XYZ_COMPASS,
+    // INV_X_GYRO, INV_Y_GYRO, or INV_Z_GYRO
+    // Enable all sensors:
+    imu.setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS);
 
-    icm20600.initialize();
-    ak09918.switchMode(AK09918_POWER_DOWN);
-    ak09918.switchMode(AK09918_CONTINUOUS_100HZ);
-    delay(100);
+    // Use setGyroFSR() and setAccelFSR() to configure the
+    // gyroscope and accelerometer full scale ranges.
+    // Gyro options are +/- 250, 500, 1000, or 2000 dps
+    imu.setGyroFSR(2000); // Set gyro to 2000 dps
+    // Accel options are +/- 2, 4, 8, or 16 g
+    imu.setAccelFSR(16); // Set accel to +/-2g
+    // Note: the MPU-9250's magnetometer FSR is set at 
+    // +/- 4912 uT (micro-tesla's)
+
+    // setLPF() can be used to set the digital low-pass filter
+    // of the accelerometer and gyroscope.
+    // Can be any of the following: 188, 98, 42, 20, 10, 5
+    // (values are in Hz).
+    imu.setLPF(5); // Set LPF corner frequency to 5Hz
+
+    // The sample rate of the accel/gyro can be set using
+    // setSampleRate. Acceptable values range from 4Hz to 1kHz
+    imu.setSampleRate(10); // Set sample rate to 10Hz
+
+    // Likewise, the compass (magnetometer) sample rate can be
+    // set using the setCompassSampleRate() function.
+    // This value can range between: 1-100Hz
+    imu.setCompassSampleRate(10); // Set mag rate to 10Hz
+
+    // Enable tap detection in the DMP. Set FIFO sample rate to 10Hz.
+    imu.dmpBegin(DMP_FEATURE_TAP, 10);
+    // dmpSetTap parameters, in order, are:
+    // x threshold: 1-1600 (0 to disable)
+    // y threshold: 1-1600 (0 to disable)
+    // z threshold: 1-1600 (0 to disable)
+    // (Threshold units are mg/ms)
+    // taps: Minimum number of taps needed for interrupt (1-4)
+    // tap time: milliseconds between valid taps
+    // tap time multi: max milliseconds between multi-taps
+    unsigned short xThresh = 100;   // Disable x-axis tap
+    unsigned short yThresh = 100;   // Disable y-axis tap
+    unsigned short zThresh = 100; // Set z-axis tap thresh to 100 mg/ms
+    unsigned char taps = 1;       // Set minimum taps to 1
+    unsigned short tapTime = 100; // Set tap time to 100ms
+    unsigned short tapMulti = 1000;// Set multi-tap time to 1s
+    imu.dmpSetTap(xThresh, yThresh, zThresh, taps, tapTime, tapMulti);
+  
     SerialUSB.println("9DOF Initialized");
 
     magCal = calStorage.read();
@@ -64,26 +103,9 @@ void imusetup() {
 	SerialUSB.println("No magnetic calibration available - defaulting to self-calibration");
     }
     haveimu=true;
-  }
+}
 
-bool updateMag(void) {
-    AK09918_err_type_t err = ak09918.isDataReady();
-    if (err==AK09918_ERR_NOT_RDY)
-	return false;
-    else if (err != AK09918_ERR_OK ) {
-	SerialUSB.print("AK09918.isDataReady() -> 0x");
-	SerialUSB.println(err,HEX);
-    }
-    int32_t x, y, z;
-    err = ak09918.getRawData(&x, &y, &z);  // raw data is in units of 0.15uT
-    if (err !=  AK09918_ERR_OK) {
-	Serial.print("getRawData err: 0x");
-	Serial.println(err, HEX);
-	return false;
-    }
-    //rawmag_x = x; rawmag_y = y; rawmag_z = z;
-    rawmag_x = x; rawmag_y = z; rawmag_z = -y;  // Module is mounted on side
-
+void updateCalibration() {
     static short mag_xmin = -100, mag_xmax = 100, mag_ymin = -100, mag_ymax = 100, mag_zmin = -100, mag_zmax = 100;
     bool changed = false;
     if (rawmag_x < mag_xmin) {
@@ -152,100 +174,48 @@ bool updateMag(void) {
 	    lastdebug=millis();
 	}
     }
-
-    // Exponential average and scale up 100x
-    mag_x-=(mag_x - rawmag_x*100)/100;
-    mag_y-=(mag_y-  rawmag_y*100)/100;
-    mag_z-=(mag_z- rawmag_z*100)/100;
-    //mag_x *= 15;  mag_y *= 15;  mag_z *= 15; // Now in .01 uT
-    return true;
-}
-	
-void updateAccGyro() {
-    // Module mounted on side, so x=mz, y=mx, z=-my;
-    acc_x = icm20600.getRawAccelerationX();
-    acc_z = -icm20600.getRawAccelerationY();
-    acc_y = icm20600.getRawAccelerationZ();
-    gyro_x = icm20600.getRawGyroscopeX();
-    gyro_z = -icm20600.getRawGyroscopeY();
-    gyro_y = icm20600.getRawGyroscopeZ();
 }
 
-void detectGestures() {
-    // Detect taps on the size
-    static unsigned long lasttap=0;  // Time in ms of last tap
-    static int nstill = 0;   // Number of samples of no external acceleration
-    static float tilt = 0;  // Tilt in degrees (0=lying flat)
-    const float tapaccel = 0.5f;  // Minimum tap acceleration
-    const float stillaccel = 0.1f;  // External acceleration less than this to be considered still
-    const float minstill = 5;   // Number of samples that must be still before tap
-    const int holdoff = 100;  // Hold-off in msec before another tap is recognized
-    float acc_mag = sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y+1.0f*acc_z*acc_z)/2048;
-    float external = fabs(acc_mag-1);
-    if (external>=tapaccel && nstill>=minstill && millis()-lasttap> holdoff) {
-	// New tap
-	sprintf(fmtbuf,"TAP: acc=%.1f, nstill=%d, tilt=%.0f",external, nstill, tilt);
-	SerialUSB.println(fmtbuf);
-	uitap(tilt);
-    }
-
-    if (external<stillaccel) {
-	float xymag=sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y);
-	tilt= atan2(xymag,1.0f*acc_z)*57.3;
-	nstill++;
-    } else
-	nstill=0;
-}
-
-bool update9DOF() {
-    updateAccGyro();
-    if (updateMag()) {
-	// The mag update also sets the update rate in general
-	detectGestures();
-	return true;
-    }
-    return false;
-}
 
 float getHeading(void) {
     // Get current heading in degrees
-
-    // roll/pitch in radian
-    double roll = atan2((float)acc_y, (float)acc_z);
-    double pitch = atan2(-(float)acc_x, sqrt((float)acc_y * acc_y + (float)acc_z * acc_z));
-
-    double Xheading = mag_x * cos(pitch) + mag_y * sin(roll) * sin(pitch) + mag_z * cos(roll) * sin(pitch);
-    double Yheading = mag_y * cos(roll) - mag_z * sin(pitch);
-
-    const double declination = -6;   // Magnetic declination
-    float heading = 180 + 57.3 * atan2(Yheading, Xheading) + declination;
-    
-    static unsigned long lastdbg = 0;
-
-    if (millis() - lastdbg > 1000 ) {
-	sprintf(fmtbuf, "Roll: %.0f, Pitch: %.0f, Heading: %.0f", (roll * 57.3),( pitch * 57.3),heading);
-	SerialUSB.println(fmtbuf);
-	lastdbg = millis();
-    }
-
-    return heading;
+    return imu.computeCompassHeading();
 }
 
 void imuloop() {
-    update9DOF();
-    static unsigned long lastdbg = 0;
-
-    if (millis() - lastdbg > 1000 ) {
-	double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
-	sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field);
-	SerialUSB.println(fmtbuf);
-	lastdbg = millis();
+    // Check for new data
+    if (imu.dataReady()) {
+	// Got new data, save it
+	imu.update(UPDATE_ACCEL|UPDATE_GYRO|UPDATE_COMPASS);
+	// rawmag_x = imu.mx; rawmag_y = imu.mz; rawmag_z = -imu.my;  // Module is mounted on side
+	rawmag_x = imu.mx; rawmag_y = imu.my; rawmag_z = imu.mz;  // Normal orientation
+	gyro_x = imu.gx; gyro_y = imu.gy; gyro_z = imu.gz;  // Normal orientation
+	acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation
+	updateCalibration();  
+	static unsigned long lastdbg = 0;
+	if (millis() - lastdbg > 1000 ) {
+	    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
+	    sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field);
+	    SerialUSB.println(fmtbuf);
+	    lastdbg = millis();
+	}
     }
 
-    //    delay(10);  // At most 100Hz update rate (calls yield)
-  // Check stack
-  static int minstack=100000; minstack=stackcheck("IMU",minstack);
-  yield();
+    // Check for new data in the FIFO
+    while ( imu.fifoAvailable() )  {
+	// DMP FIFO must be updated in order to update tap data
+	imu.dmpUpdateFifo();
+	// Check for new tap data by polling tapAvailable
+	if ( imu.tapAvailable() )   {
+	    sprintf(fmtbuf,"Tap %d, %d\n",imu.getTapDir(), imu.getTapCount());
+	    SerialUSB.println(fmtbuf);
+	    uitap(90);
+	}
+    }
+
+    // Check stack
+    static int minstack=100000; minstack=stackcheck("IMU",minstack);
+    yield();
 }
 
 void imumonitor() {
@@ -255,8 +225,8 @@ void imumonitor() {
     while (SerialUSB.available())
 	SerialUSB.read();
     while (true) {
-	if (update9DOF())  {
-	    sprintf(fmtbuf,"Raw:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, rawmag_x, rawmag_y, rawmag_z);
+	if (imu.dataReady()) {
+	    sprintf(fmtbuf,"Raw:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz);
 	    SerialUSB.println(fmtbuf);
 	}
 	if (SerialUSB.available()) {
@@ -291,3 +261,4 @@ void imucommand(const char *cmd) {
     } else
 	SerialUSB.println("Unexpected IMU command");
 }
+#endif /* IMU_9250 */

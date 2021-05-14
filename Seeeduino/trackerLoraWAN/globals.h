@@ -9,8 +9,8 @@ extern Uart Serial3;   // External Serial port on LoRaWAN board (D4/D5).
 #define EXTERNALGPS   // Define to use GPS connected to external serial port
 
 // Define one of the following to set the IMU type
-//#define IMU_9250
-#define IMU_AK
+#define IMU_9250
+//#define IMU_AK
 
 #ifdef EXTERNALGPS
 #define SerialGPS Serial3   // External serial port
