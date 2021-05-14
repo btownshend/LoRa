@@ -1,7 +1,5 @@
-#include <Arduino.h>
-
-#include "loadmonitor.h"
 #include "globals.h"
+#include "loadmonitor.h"
 
 void loadmonitorloop(void) {
     static unsigned long lasttime=0, avgstart=0;

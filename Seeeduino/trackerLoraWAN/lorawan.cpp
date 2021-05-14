@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <Scheduler.h>
 
 #include "globals.h"

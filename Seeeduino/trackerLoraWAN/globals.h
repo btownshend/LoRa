@@ -1,5 +1,8 @@
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
+
+#include <Arduino.h>
+
 extern char fmtbuf[];
 
 extern unsigned int stackcheck(const char *module, unsigned int minstack);

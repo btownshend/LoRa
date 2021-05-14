@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include "globals.h"
 #include "battery.h"
 
 // battey of Seeeduino LoRaWAN

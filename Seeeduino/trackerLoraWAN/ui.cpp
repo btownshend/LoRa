@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include "globals.h"
 #include "ui.h"
 #include "imu.h"
 
