@@ -9,12 +9,9 @@ void SERCOM2_Handler() {
 }
 
 void setup() {
-  // put your setup code here, to run once:
-
-
   Serial.begin(115200);
   //Serial3.begin(230400);  // For e-ink display
-  Serial3.begin(9600);  // For GPS
+  Serial3.begin(9600);  // For GPS or BLE
   // Change PA14,PA15 to SERCOM (mode C)
   pinPeripheral(PIN_SERIAL3_RX, PIO_SERCOM);
   pinPeripheral(PIN_SERIAL3_TX, PIO_SERCOM);
