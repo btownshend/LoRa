@@ -1,3 +1,5 @@
+import json
+
 import paho.mqtt.client as mqtt
 
 # The callback for when the client receives a CONNACK response from the server.
@@ -12,8 +14,12 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     print(msg.topic+" "+str(msg.payload))
-    tv.item(msg.topic,values=(msg.topic, msg.payload))
-    tv.insert(parent='', index=tk.END, iid=msg.topic, text='', values=(msg.topic,msg.payload))
+    #tv.item(msg.topic,values=(msg.topic, msg.payload))
+    value=json.dumps(json.loads(msg.payload),indent=1)
+    if tv.exists(msg.topic):
+        tv.set(msg.topic,column=1,value=value)
+    else:
+        tv.insert(parent='', index=tk.END, iid=msg.topic, text='', values=(msg.topic,value))
 
     # for r in vars:
     #     if r[0].get()==msg.topic:
@@ -53,22 +59,18 @@ vars=[[tk.StringVar(value="Empty") for c in range(2)] for r in range(6)]
 #     tk.Grid.rowconfigure(top,r,weight=1)
 # for c in range(len(lbls[0])):
 #     tk.Grid.columnconfigure(top,c,weight=1)
-
+ttk.Style().configure('Treeview',rowheight=100)
 tv = ttk.Treeview(top)
 tv['columns']=('Topic', 'Payload')
 tv.column('#0', width=0, stretch=tk.NO)
-tv.column('Topic', anchor=tk.CENTER, width=80)
-tv.column('Payload', anchor=tk.CENTER, width=80)
+tv.column('Topic', anchor="nw", width=300, stretch=tk.YES)
+tv.column('Payload', anchor="nw", width=800, stretch=tk.YES)
 
 tv.heading('#0', text='', anchor=tk.CENTER)
 tv.heading('Topic', text='Topic', anchor=tk.CENTER)
 tv.heading('Payload', text='Payload', anchor=tk.CENTER)
 
 tv.insert(parent='', index=0, iid=0, text='', values=('Vineet','Alpha'))
-tv.insert(parent='', index=1, iid=1, text='', values=('Anil','Bravo'))
-tv.insert(parent='', index=2, iid=2, text='', values=('Vinod','Charlie'))
-tv.insert(parent='', index=3, iid=3, text='', values=('Vimal','Delta'))
-tv.insert(parent='', index=4, iid=4, text='', values=('Manjeet','Echo'))
 
 tv.pack()
 
