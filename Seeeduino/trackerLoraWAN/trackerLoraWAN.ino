@@ -1,5 +1,4 @@
 #include <Scheduler.h>
-
 #include "gps.h"
 #include "ble.h"
 #include "imu.h"
@@ -25,7 +24,10 @@ char fmtbuf[200]; // Space to build formatted strings
 
 void cmdexec(char *buf) {
   SerialUSB.print("Exec: ");
-  SerialUSB.println(buf);
+  SerialUSB.print(buf);
+  SerialUSB.print("[");
+  SerialUSB.print(strlen(buf));
+  SerialUSB.println("]");
   if (buf[0] == 'L')
       lorawanusercommand(buf+1);
   else if (buf[0] == 'G')
@@ -37,7 +39,7 @@ void cmdexec(char *buf) {
       blecommand(buf+1);
 #endif
  else
-    SerialUSB.println("Expected (L)ora or (G)PS command");
+    SerialUSB.println("Expected (L)ora, (G)PS, (I)MU, or (B)LE command");
 }
 
 void cmdread(void) {
