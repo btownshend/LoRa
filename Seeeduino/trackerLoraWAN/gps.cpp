@@ -1,3 +1,5 @@
+#include <TimeLib.h>
+
 #include "gps.h"
 #include "globals.h"
 
@@ -16,6 +18,17 @@ void getgps() {
 
     if (gps.encode(c)) {
       newData = true;
+      unsigned long age;
+      int Year;
+      byte Month, Day, Hour, Minute, Second;
+      gps.crack_datetime(&Year, &Month, &Day, &Hour, &Minute, &Second, NULL, &age);
+      if (age < 500) {
+        // set the Time to the latest GPS reading
+        setTime(Hour, Minute, Second, Day, Month, Year);
+	// correct for local time zone
+	//const int offset=-7;  // PDT
+        //adjustTime(offset * SECS_PER_HOUR);
+      }
     }
 
     if (gpsecho > 0) {
