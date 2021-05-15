@@ -104,6 +104,12 @@ void loraread() {
 	    lorabuf[lorabuflen] = 0;
 	    SerialUSB.print("<LORA: ");
 	    SerialUSB.println(lorabuf);
+#ifdef LORATOBLE
+	    if (bleconnected) {
+		SerialBLE.print("<LORA: ");
+		SerialBLE.println(lorabuf);
+	    }
+#endif
 	    processLoRa(lorabuf);
 	    lorabuflen = 0;
 	} else if (c != '\n' && lorabuflen < sizeof(lorabuf) - 1)
