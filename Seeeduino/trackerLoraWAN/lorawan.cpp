@@ -68,15 +68,20 @@ bool setDR() {
     const int installmargin = 10;
     const int minDR = 0;
     const int maxDR = 4;
-    static int currentDR = -1;
 
-    int tgtDR = ((margin - installmargin) - (-20)) * 2 / 5;
+    int tgtDR;
+    
+    if (pendingLCR > 1)
+	tgtDR = currentDR-1;
+    else
+	tgtDR = ((gwmargin - installmargin) - (-20)) * 2 / 5;
+
     if (tgtDR < minDR)
 	tgtDR = minDR;
     else if (tgtDR > maxDR)
 	tgtDR = maxDR;
     if (tgtDR != currentDR) {
-	sprintf(fmtbuf, "margin=%d: changing DR from %d to %d", margin, currentDR, tgtDR);
+	sprintf(fmtbuf, "pendingLCR=%d, margin=%d: changing DR from %d to %d", pendingLCR, gwmargin, currentDR, tgtDR);
 	SerialUSB.println(fmtbuf);
 	currentDR = tgtDR;
 	sprintf(fmtbuf, "AT+DR=DR%d", currentDR);
@@ -326,7 +331,11 @@ void processLoRa(char *buf) {
     } else if (strcmp(buf, "+MSGHEX: FPENDING") == 0) {
 	SerialUSB.println("Incoming message");
     } else if (strncmp(buf, "+MSGHEX: RXWIN", 14) == 0) {
+	int nm=sscanf(buf,"+MSGHEX: RXWIN1, RSSI %d, SNR %f",&lastRSSI,&lastSNR);
+	lastReceived=millis();
 	SerialUSB.println(&buf[14]);  // +MSGHEX: RXWIN1, RSSI -49, SNR 6.8
+	if (nm!=2)
+	    SerialUSB.println("Failed parse");
     } else if (strcmp(buf, "+MSGHEX: Please join network first") == 0) {
 	SerialUSB.println("*** Not joined");
 	join();
@@ -341,9 +350,16 @@ void processLoRa(char *buf) {
 	SerialUSB.print("Max message length: ");
 	SerialUSB.println(maxmsglen);
     } else if (strncmp(buf, "+MSGHEX: Link ", 14) == 0) { // e.g. +MSGHEX: Link 21, 1
-	margin = atoi(&buf[14]);
-	SerialUSB.print("Link margin: ");
-	SerialUSB.println(margin);
+	int gwcnt;
+	int nr=sscanf(buf, "+MSGHEX: Link %d, %d",&gwmargin, &gwcnt);
+	if (nr!=2)
+	    SerialUSB.println("Failed Link parse");
+	else {
+	    SerialUSB.print("Link margin: ");
+	    SerialUSB.println(gwmargin);
+	}
+	pendingLCR=0;  // Clear the pending LCR
+	lastLCR = millis();
     } else if (strncmp(buf, "+MSGHEX: No free channel", 24) == 0) {
 	SerialUSB.println("*** No free channel");
 	msgsending = false;
@@ -410,12 +426,10 @@ void lorawanloop(void)
     if (setDR())
 	return;
 
-    // Request line update
-    static unsigned long lastLCR = 0;
-    if (millis() - lastLCR > 60000) {
-	lastLCR = millis();
+    // Request line update every 60s (or 5s if we haven't heard from the prior attempts)
+    if (millis() - lastLCR > (60+5*pendingLCR)*1000) {
 	lorawrite("AT+LW=LCR");
-	margin -= 1; // In case we don't get a reply, slowly decrease our margin
+	pendingLCR++;
 	return;
     }
 
