@@ -30,7 +30,8 @@ static MPU9250_DMP imu;
 
 void imusetup() {
     SerialUSB.println("imusetup");
-
+    delay(100);
+    
     // Enable Grove connectors
     digitalWrite(38, HIGH);
 
@@ -252,6 +253,7 @@ void imumonitor() {
 	SerialUSB.read();
     while (true) {
 	if (imu.dataReady()) {
+	    imu.update(UPDATE_ACCEL|UPDATE_GYRO|UPDATE_COMPASS);
 	    sprintf(fmtbuf,"Raw:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz);
 	    SerialUSB.println(fmtbuf);
 	}
