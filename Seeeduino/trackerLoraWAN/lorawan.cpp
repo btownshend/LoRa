@@ -5,6 +5,11 @@
 #include "battery.h"
 #include "imu.h"
 #include "gps.h"
+#include "ble.h"
+
+#ifdef EXTERNALBLE
+//#define LORABLE  // Send LoRa debug messages to BLE
+#endif
 
 const int updateInterval = 10;   // Update interval in seconds
 bool msgsending = false;
@@ -121,6 +126,12 @@ void lorawrite(const char *str) {
 
     SerialUSB.print(">LORA: ");
     SerialUSB.println(str);
+#ifdef LORATOBLE
+    if (bleconnected) {
+	SerialBLE.print(">LORA: ");
+	SerialBLE.println(str);
+    }
+#endif
 }
 
 void loramsg(int n, unsigned char data[]) {

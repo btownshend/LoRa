@@ -1,6 +1,7 @@
 #include <Scheduler.h>
 
 #include "gps.h"
+#include "ble.h"
 #include "imu.h"
 #include "stepper.h"
 #include "globals.h"
@@ -30,6 +31,10 @@ void cmdexec(char *buf) {
       gpsusercommand(buf+1);
   else if (buf[0]=='I')
        imucommand(buf+1);
+#ifdef EXTERNALBLE
+  else if (buf[0]=='B')
+      blecommand(buf+1);
+#endif
  else
     SerialUSB.println("Expected (L)ora or (G)PS command");
 }
@@ -100,6 +105,9 @@ void setup(void) {
   Scheduler.startLoop(gpsloop);
   Scheduler.startLoop(lorawanloop,2048);  // Needs more than 1024 bytes of stack space or sprintf causes problem
   Scheduler.startLoop(loadmonitorloop);
+#ifdef EXTERNALBLE
+  Scheduler.startLoop(bleloop,2048);
+#endif
 }
 
 void loop(void) {

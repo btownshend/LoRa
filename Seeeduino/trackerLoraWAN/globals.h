@@ -9,7 +9,12 @@ extern unsigned int stackcheck(const char *module, unsigned int minstack);
 
 extern Uart Serial3;   // External Serial port on LoRaWAN board (D4/D5).
 
-#define EXTERNALGPS   // Define to use GPS connected to external serial port
+//#define EXTERNALGPS   // Define to use GPS connected to external serial port
+#define EXTERNALBLE // BLE Connected
+
+#if defined(EXTERNALGPS) && defined(EXTERNALBLE)
+Conflict -- only one external Serial port
+#endif
 
 // Define one of the following to set the IMU type
 #define IMU_9250
@@ -19,6 +24,10 @@ extern Uart Serial3;   // External Serial port on LoRaWAN board (D4/D5).
 #define SerialGPS Serial3   // External serial port
 #else
 #define SerialGPS Serial2   // Built-in GPS on LoraWan board
+#endif
+
+#ifdef EXTERNALBLE
+#define SerialBLE Serial3   // External serial port
 #endif
 
 #endif /* _GLOBALS_H_ */
