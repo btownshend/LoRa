@@ -216,9 +216,12 @@ void imuloop() {
 	acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation
 	updateCalibration();  
 	static unsigned long lastdbg = 0;
-	if (millis() - lastdbg > 1000 ) {
+	if (millis() - lastdbg > 10000 ) {
 	    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
 	    sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field);
+	    SerialUSB.print(fmtbuf);
+	    imu.computeEulerAngles(true);
+	    sprintf(fmtbuf, ", Roll: %.0f, Pitch: %.0f, Yaw: %.0f, Heading: %.0f", imu.roll,imu.pitch,imu.yaw,getHeading());
 	    SerialUSB.println(fmtbuf);
 	    lastdbg = millis();
 	}
