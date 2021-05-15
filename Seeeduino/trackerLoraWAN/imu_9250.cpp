@@ -129,7 +129,7 @@ void imusetup() {
 }
 
 void updateCalibration() {
-    static short mag_xmin = -100, mag_xmax = 100, mag_ymin = -100, mag_ymax = 100, mag_zmin = -100, mag_zmax = 100;
+    static short mag_xmin = -10, mag_xmax = 10, mag_ymin = -10, mag_ymax = 10, mag_zmin = -10, mag_zmax = 10;
     bool changed = false;
     if (rawmag_x < mag_xmin) {
 	mag_xmin = rawmag_x;
