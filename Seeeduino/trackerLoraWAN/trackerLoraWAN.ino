@@ -8,6 +8,7 @@
 #include "battery.h"
 #include "lorawan.h"
 #include "loadmonitor.h"
+#include "target.h"
 
 // Add Serial3 using SERCOM2
 #include "wiring_private.h" // pinPeripheral() function
@@ -98,6 +99,8 @@ void setup(void) {
     // Change PA14,PA15 to SERCOM (mode C) (AFTER Serial3.begin)
   pinPeripheral(PIN_SERIAL3_RX, PIO_SERCOM);
   pinPeripheral(PIN_SERIAL3_TX, PIO_SERCOM);
+  
+  initTargets();
   
   if (haveimu)
       Scheduler.startLoop(imuloop,2048);
