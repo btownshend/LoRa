@@ -43,7 +43,6 @@ void imusetup() {
     // indicates the IMU was present and successfully set up
     if (imu.begin() != INV_SUCCESS) {
 	SerialUSB.println("Unable to communicate with MPU-9250");
-	SerialUSB.println("Check connections, and try again.");
 	return;
     }
 
@@ -52,14 +51,23 @@ void imusetup() {
     // INV_XYZ_GYRO, INV_XYZ_ACCEL, INV_XYZ_COMPASS,
     // INV_X_GYRO, INV_Y_GYRO, or INV_Z_GYRO
     // Enable all sensors:
-    imu.setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS);
+    if (imu.setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS) != INV_SUCCESS) {
+	SerialUSB.println("Unable to setSensors()");
+	return;
+    }
 
     // Use setGyroFSR() and setAccelFSR() to configure the
     // gyroscope and accelerometer full scale ranges.
     // Gyro options are +/- 250, 500, 1000, or 2000 dps
-    imu.setGyroFSR(2000); // Set gyro to 2000 dps
+    if (imu.setGyroFSR(2000) != INV_SUCCESS) { // Set gyro to 2000 dps
+	SerialUSB.println("Unable to setGyroFSR(2000)");
+	return;
+    }
     // Accel options are +/- 2, 4, 8, or 16 g
-    imu.setAccelFSR(16); // Set accel to +/-2g
+    if (imu.setAccelFSR(16)  != INV_SUCCESS) {  // Set accel to +/-2g
+	SerialUSB.println("Unable to setAccelFSR()");
+	return;
+    }
     // Note: the MPU-9250's magnetometer FSR is set at 
     // +/- 4912 uT (micro-tesla's)
 
@@ -67,19 +75,31 @@ void imusetup() {
     // of the accelerometer and gyroscope.
     // Can be any of the following: 188, 98, 42, 20, 10, 5
     // (values are in Hz).
-    imu.setLPF(5); // Set LPF corner frequency to 5Hz
+    if (imu.setLPF(5) != INV_SUCCESS) { // Set LPF corner frequency to 5Hz
+	SerialUSB.println("Unable to setLPF()");
+	return;
+    }
 
     // The sample rate of the accel/gyro can be set using
     // setSampleRate. Acceptable values range from 4Hz to 1kHz
-    imu.setSampleRate(10); // Set sample rate to 10Hz
+    if (imu.setSampleRate(10) != INV_SUCCESS) { // Set sample rate to 10Hz
+	SerialUSB.println("Unable to setSampleRate()");
+	return;
+    } 
 
     // Likewise, the compass (magnetometer) sample rate can be
     // set using the setCompassSampleRate() function.
     // This value can range between: 1-100Hz
-    imu.setCompassSampleRate(10); // Set mag rate to 10Hz
+    if (imu.setCompassSampleRate(10) != INV_SUCCESS) { // Set mag rate to 10Hz
+	SerialUSB.println("Unable to setSensors()");
+	return;
+    }
 
     // Enable tap detection in the DMP. Set FIFO sample rate to 10Hz.
-    imu.dmpBegin(DMP_FEATURE_TAP, 10);
+    if (imu.dmpBegin(DMP_FEATURE_TAP|DMP_FEATURE_6X_LP_QUAT , 10) != INV_SUCCESS) {
+	SerialUSB.println("Unable to dmpBegin()");
+	return;
+    }
     // dmpSetTap parameters, in order, are:
     // x threshold: 1-1600 (0 to disable)
     // y threshold: 1-1600 (0 to disable)
@@ -94,7 +114,10 @@ void imusetup() {
     unsigned char taps = 1;       // Set minimum taps to 1
     unsigned short tapTime = 100; // Set tap time to 100ms
     unsigned short tapMulti = 1000;// Set multi-tap time to 1s
-    imu.dmpSetTap(xThresh, yThresh, zThresh, taps, tapTime, tapMulti);
+    if (imu.dmpSetTap(xThresh, yThresh, zThresh, taps, tapTime, tapMulti) != INV_SUCCESS) {
+	SerialUSB.println("Unable to dmpSetTap()");
+	return;
+    }
   
     SerialUSB.println("9DOF Initialized");
 
