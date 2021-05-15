@@ -14,9 +14,15 @@
 const int updateInterval = 10;   // Update interval in seconds
 bool msgsending = false;
 int maxmsglen = 53;
-int margin = 0;   // Assume 0dB margin to start
+int currentDR = -1;
+int gwmargin = 0;   // Assume 0dB margin to start
 unsigned long lorabusy = 0; // Time in msec that last lora cmd was sent -- avoid overrunning
 const int LORABUSYTIME = 10;  // Assume cmds take this long to run (msec)
+float lastSNR = 999;  // SNR of last received message
+int lastRSSI = 999;  // RSSI of last received message
+unsigned long lastReceived = 0;  // Time  of last received message (millis)
+int pendingLCR = 0;   // Number of LCR messages sent since last response received
+unsigned long lastLCR = 0; // Last LCR messager received (millis)
 
 void lorawrite(const char *str);  // Forward declaration
 void processLoRa(char *buf);
