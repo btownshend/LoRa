@@ -15,3 +15,4 @@ matlab/magcal/rawdata2.txt
 matlab/magcal/rawdata.txt
 
 Seeeduino/libraries/Arduino-Scheduler/
+mqtt/MQTT*.log
