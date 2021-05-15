@@ -11,6 +11,8 @@ plotvalue(topic,'rxInfo.rssi',false);
 ylabel('RSSI (dBm)');
 ax(2)=gca;
 linkaxes(ax,'x');
+nexttile;
+crossplot(topic,'rxInfo.rssi','rxInfo.loRaSNR');
 return;
 
 leg={};
@@ -47,27 +49,21 @@ xlabel('Time (min)');
 ylabel('RSSI (dBm)');
 title('RSSI');
 a(end+1)=gca;
-
-return;
-
-for i=1:length(udev)
-  sel=strcmp(udev{i},{rx.deviceName});
-  plot(find(sel),[rx(sel).rssi]);
-  hold on;
-end
-title('RSSI');
-a(2)=gca;
-
 linkaxes(a,'x');
 
 nexttile;
-for i=1:length(udev)
-  sel=strcmp(udev{i},{rx.deviceName});
-  snr=[rx(sel).snr]; snr=snr+(rand(size(snr))*2-1)*0.25;
-  rssi=[rx(sel).rssi]; rssi=rssi+(rand(size(rssi))*2-1)*0.5;
-  plot(rssi,snr,'.');
-  hold on;
+leg={};
+for i=1:length(topic)
+  rssi=getnumfield(topic(i).payload,'rxInfo','rssi');
+  snr=getnumfield(topic(i).payload,'rxInfo','loRaSNR');
+  if any(isfinite(rssi) & isfinite(snr))
+    plot(rssi,snr,'o');
+    hold on;
+    leg{end+1}=gettopicname(topic(i));
+  end
 end
-title('RSSI vs SNR');
-ylabel('SNR');
-xlabel('RSSI');
+legend(leg);
+xlabel('RSSI (dBm)');
+ylabel('SNR (dB)');
+title('SNR vs RSSI');
+

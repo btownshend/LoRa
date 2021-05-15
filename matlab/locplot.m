@@ -1,4 +1,4 @@
-% Plot location voltage
+% Plot location
 
 % Get gateway avg position
 sel=arrayfun(@(z) isfield(z.payload,'rxInfo'), j);
@@ -6,6 +6,7 @@ gwlat=arrayfun(@(z) z.payload.rxInfo.location.latitude, j(sel));
 gwlong=arrayfun(@(z) z.payload.rxInfo.location.longitude, j(sel));
 
 loc=[];
+t0=now()+7/24;
 for i=1:length(j)
   p=j(i).payload;
   if isfield(p,'object') && isfield(p.object,'latitude')
@@ -15,9 +16,9 @@ for i=1:length(j)
       hdop=nan;
     end
     if ischar(p.object.latitude)
-      loc=[loc,struct('deviceName',p.deviceName,'latitude',str2double(p.object.latitude(1:end-2)),'longitude',str2double(p.object.longitude(1:end-2)))];
+      loc=[loc,struct('time',gettime(p)-t0,'deviceName',p.deviceName,'latitude',str2double(p.object.latitude(1:end-2)),'longitude',str2double(p.object.longitude(1:end-2)))];
     else
-      loc=[loc,struct('deviceName',p.deviceName,'hdop',hdop,'latitude',p.object.latitude,'longitude',p.object.longitude)];
+      loc=[loc,struct('time',gettime(p)-t0,'deviceName',p.deviceName,'hdop',hdop,'latitude',p.object.latitude,'longitude',p.object.longitude)];
     end
   end
 end
@@ -31,15 +32,15 @@ a=[];
 for i=1:length(udev)
   nexttile;
   sel=strcmp(udev{i},{loc.deviceName});
-  plot(find(sel),[loc(sel).latitude],'-');
-  axis([1,length(loc),min([loc.latitude]),max([loc.latitude])]);
+  plot([loc(sel).time]*24*60,[loc(sel).latitude],'-');
+  %axis([1,length(loc),min([loc.latitude]),max([loc.latitude])]);
   ylabel('Latitude');
   a(i,1)=gca;
   hold on;
   yyaxis right
-  plot(find(sel),[loc(sel).longitude],'-');
+  plot([loc(sel).time]*24*60,[loc(sel).longitude],'-');
   ylabel('Longitude');
-  axis([1,length(loc),min([loc.longitude]),max([loc.longitude])]);
+  %axis([1,length(loc),min([loc.longitude]),max([loc.longitude])]);
   a(i,2)=gca;
   title(udev{i});
   % Compute home position
@@ -62,6 +63,7 @@ for i=1:length(udev)
   sel1=strcmp(udev{i},{loc.deviceName});
   sel=find(sel1 & ([loc.hdop]<1.2 | isnan([loc.hdop])));
   ds=round(length(sel)/50);
+  ds=1;
   lat=decimate([loc(sel).latitude],ds,'FIR');
   long=decimate([loc(sel).longitude],ds,'FIR');
   fprintf('%s keeping %d/%d GPS fixes downsampled by %f\n', udev{i}, length(sel), sum(sel1),ds);
@@ -69,7 +71,6 @@ for i=1:length(udev)
   h=plot(long,lat,'-');
   hold on;
   plot(meanPos(i,2),meanPos(i,1),'o','MarkerSize',15,'LineWidth',2,'HandleVisibility','off','Color',get(h,'Color'));
-  keyboard;
 end
 plot(trimmean(gwlong,50),trimmean(gwlat,50),'ok','Markersize',15,'LineWidth',1,'HandleVisibility','off');
 legend(udev,'location','best');
