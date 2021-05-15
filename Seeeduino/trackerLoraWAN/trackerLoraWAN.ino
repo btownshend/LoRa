@@ -80,6 +80,29 @@ unsigned int stackcheck(const char *module, unsigned int minstack) {
     return minstack;
 }
 
+void debug(const char *line) {
+    SerialUSB.println(line);
+#ifdef EXTERNALBLE
+    if (bleconnected)
+	SerialBLE.println(line);
+#endif
+}
+
+void statusReport(void) {
+    // Generate a status report at regular intervals
+    static unsigned long lastReport=0;
+    if (millis() - lastReport > 10000) {
+	sprintf(fmtbuf,"------ %d/%d/%d %02d:%02d:%02d",month(),day(),year(),hour(),minute(),second()); debug(fmtbuf);
+	sprintf(fmtbuf,"DR%d, margin=%d, LCR=%d (%d sec);  RSSI=%d, SNR=%.1f (%d sec)",currentDR, gwmargin, pendingLCR, (millis()-lastLCR)/1000,lastRSSI,lastSNR,(millis()-lastReceived)/1000);debug(fmtbuf);
+	sprintf(fmtbuf,"Target %d: dist=%.0fm, heading=%.0f, age=%d", currentTarget, targets[currentTarget].getDistance(), targets[currentTarget].getHeading(),targets[currentTarget].getAge()); debug(fmtbuf);
+	long lat, lon;   unsigned long age;
+	gps.get_position(&lat,&lon,&age);
+	sprintf(fmtbuf,"GPS: age:%d, nsat=%d",age/1000,gps.satellites()); debug(fmtbuf);
+	sprintf(fmtbuf,"a=[%d,%d,%d] heading=%.0f",acc_x,acc_y,acc_z,getHeading()); debug(fmtbuf);
+	lastReport=millis();
+    }
+}
+
 void setup(void) {
   SerialUSB.begin(115200);
 
@@ -117,5 +140,6 @@ void setup(void) {
 
 void loop(void) {
     cmdread();
+    statusReport();
     yield(); 
 }
