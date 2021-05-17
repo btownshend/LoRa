@@ -19,7 +19,7 @@ leg={};
 sym='ox+*sdv^<>ph';symcnt=1;
 for i=1:length(topic)
   snr=getnumfield(topic(i).payload,'rxInfo','loRaSNR');
-  if any(isfinite(snr))
+  if sum(isfinite(snr))>0
     t=gettime(topic(i).payload)-t0;
     plot(t*24*60,snr,sym(symcnt));
     symcnt=symcnt+1;
@@ -37,7 +37,7 @@ nexttile;
 leg={};
 for i=1:length(topic)
   rssi=getnumfield(topic(i).payload,'rxInfo','rssi');
-  if any(isfinite(rssi))
+  if sum(isfinite(rssi))>0
     t=gettime(topic(i).payload)-t0;
     plot(t*24*60,rssi,'-');
     hold on;

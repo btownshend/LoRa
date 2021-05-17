@@ -1,5 +1,5 @@
 % Plot events from last hours 
-function j=parse(hours)
+function [topic,j]=parse(hours)
   if nargin<1
     hours=24;
   end
