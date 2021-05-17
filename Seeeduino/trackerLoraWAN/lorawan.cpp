@@ -103,8 +103,8 @@ void loraread() {
     static char lorabuf[200];
     static unsigned int lorabuflen = 0;
 
-    while (Serial1.available()) {
-	char c = Serial1.read();
+    while (SerialLoRa.available()) {
+	char c = SerialLoRa.read();
 	if (c == '\r') {
 	    lorabuf[lorabuflen] = 0;
 	    SerialUSB.print("<LORA: ");
@@ -123,7 +123,7 @@ void loraread() {
 }
 
 bool islorabusy() {
-    return msgsending || Serial1.available() || (millis() - lorabusy < LORABUSYTIME);
+    return msgsending || SerialLoRa.available() || (millis() - lorabusy < LORABUSYTIME);
 }
 
 void lorawrite(const char *str) {
@@ -138,7 +138,7 @@ void lorawrite(const char *str) {
 	loraread();
 	delay(1);
     }
-    Serial1.println(str);
+    SerialLoRa.println(str);
     lorabusy = millis();
 
     SerialUSB.print(">LORA: ");
@@ -391,7 +391,7 @@ void lorawanusercommand(const char *line) {
 }
 
 void lorawansetup(void) {
-    Serial1.begin(115200); // Seeeduino needs to have rate set using AT+UART=BR,115200
+    SerialLoRa.begin(115200); // Seeeduino needs to have rate set using AT+UART=BR,115200
     delay(100);
     loraread();
     setDR();

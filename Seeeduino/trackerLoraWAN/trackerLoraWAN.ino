@@ -110,7 +110,13 @@ void setup(void) {
   SerialUSB.println("TrackerLoraWAN");
 
 #ifdef EXTERNALGPS
-       // Serial3 begin done in gpssetup()
+  SerialUSB.println("External GPS");
+#endif
+#ifdef EXTERNALLORA
+  SerialUSB.println("External LoRa");
+#endif
+#ifdef EXTERNALBLE
+  SerialUSB.println("External BLE");
 #else
 	Serial3.begin(9600);
 #endif	

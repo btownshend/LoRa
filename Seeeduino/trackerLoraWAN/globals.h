@@ -11,6 +11,7 @@ extern Uart Serial3;   // External Serial port on LoRaWAN board (D4/D5).
 
 //#define EXTERNALGPS   // Define to use GPS connected to external serial port
 #define EXTERNALBLE // BLE Connected
+//#define EXTERNALLORA
 
 #if defined(EXTERNALGPS) && defined(EXTERNALBLE)
 Conflict -- only one external Serial port
@@ -28,6 +29,12 @@ Conflict -- only one external Serial port
 
 #ifdef EXTERNALBLE
 #define SerialBLE Serial3   // External serial port
+#endif
+
+#ifdef EXTERNALLORA
+#define SerialLoRa Serial3
+#else
+#define SerialLoRa Serial1
 #endif
 
 #endif /* _GLOBALS_H_ */
