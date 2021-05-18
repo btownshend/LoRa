@@ -48,7 +48,7 @@ void gotoangle(float angle) {
 }
 
 void adjuststepper() {
-    if (uimode) {
+    if (uiactive()) {
 	gotoangle(getuipos());
     } else {
 	// Adjust stepper accordinly
