@@ -40,13 +40,13 @@ void adjuststepper() {
 }
 
 void steppersetup() {
-    const int maxspeed=1200; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s;  use half that
-    const int maxaccel=1000;  
+    const int maxspeed=1200; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s
+    const int maxaccel=1200;    // maxspeed/maxaccel gives time to reach full speed
     stepper.setMaxSpeed(maxspeed);  
     stepper.setAcceleration(maxaccel);   // Acceleration tuned for the right "look" (4000 step/s/s will get it up to vmax after rotating 90 deg, but seems to lose steps then)
-    float tmax=maxspeed/maxaccel;
-    float degmax=maxaccel*tmax*tmax/2;
-    sprintf(fmtbuf,"Stepper setup to reach max speed of %.0f deg/sec after %.2f sec, %.0f degrees of rotation", maxspeed/2, tmax, degmax);
+    float tmax=maxspeed*1.0/maxaccel;
+    float degmax=maxaccel*tmax*tmax/2/2;
+    sprintf(fmtbuf,"Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation", maxspeed/2, tmax, degmax);
     SerialUSB.println(fmtbuf);
 }
 
