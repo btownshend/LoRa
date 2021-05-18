@@ -48,20 +48,26 @@ void steppersetup() {
     float degmax=maxaccel*tmax*tmax/2/2;
     sprintf(fmtbuf,"Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation", maxspeed/2, tmax, degmax);
     SerialUSB.println(fmtbuf);
+    for (int i=0;i<360;i++)
+	sensorVals[i]=0;
 }
 
 void sensorcheck() {
     // Check sensor
     int sensor=analogRead(SENSORPIN);
-    int position=(stepper.currentPosition()*360/STEPSPERREV)%360;
+    int position=(stepper.currentPosition()/(STEPSPERREV/360))%360;
+    while (position<0)
+	position+=360;
     bool removedMax = false;  // Need to check full sensorVals array for new max if true
     int oldMax = sensorVals[maxPos];
     if (position==maxPos && sensor<oldMax)
 	// Removed prior maximum
 	removedMax=true;
-    else if (sensor > oldMax && abs(maxPos-position)>5) {
-	sprintf(fmtbuf,"Sensor max position changed from %d@%d to %d@%d",sensorVals[maxPos],maxPos,sensor,position);
-	SerialUSB.println(fmtbuf);
+    else if (sensor > oldMax) {
+	if (abs(maxPos-position)>0) {
+	    sprintf(fmtbuf,"Sensor hit new max: changed from %d@%d to %d@%d",sensorVals[maxPos],maxPos,sensor,position);
+	    SerialUSB.println(fmtbuf);
+	}
 	maxPos=position;  // New max position
     }
     // Updates sensorVals
@@ -71,10 +77,12 @@ void sensorcheck() {
 	int newMax=maxPos;
 	for (int i=0;i<360;i++)
 	    if (sensorVals[i] > sensorVals[maxPos])
-		maxPos=i;
+		newMax=i;
 	if (newMax!=maxPos) {
-	    sprintf(fmtbuf,"Sensor max position changed from %d@%d to %d@%d",oldMax,position,sensorVals[maxPos],maxPos);
-	    SerialUSB.println(fmtbuf);
+	    if (abs(maxPos-newMax)>0) {
+		sprintf(fmtbuf,"Sensor lost old max: %d@%d changed to %d and new max is %d@%d",oldMax,position,sensor,sensorVals[newMax],newMax);
+		SerialUSB.println(fmtbuf);
+	    }
 	    maxPos=newMax;
 	}
     }
