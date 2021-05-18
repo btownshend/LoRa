@@ -77,45 +77,6 @@ void steppersetup() {
 #endif
 }
 
-void sensorcheck_old() {
-    // Check sensor
-    int sensor=analogRead(PIN_SENSOR);
-    int position=(stepper.currentPosition()/(STEPSPERREV/360))%360;
-    while (position<0)
-	position+=360;
-    if (sensor==sensorVals[position])
-	return;  // No change
-    
-    bool removedMax = false;  // Need to check full sensorVals array for new max if true
-    int oldMax = sensorVals[maxPos];
-    if (position==maxPos && sensor<oldMax)
-	// Removed prior maximum
-	removedMax=true;
-    else if (sensor > oldMax) {
-	if (abs(maxPos-position)>0) {
-	    sprintf(fmtbuf,"Sensor hit new max: changed from %d@%d to %d@%d",sensorVals[maxPos],maxPos,sensor,position);
-	    SerialUSB.println(fmtbuf);
-	}
-	maxPos=position;  // New max position
-    }
-    // Updates sensorVals
-    sensorVals[position]=sensor;
-    if (removedMax) {
-	// Removed old maximum, check all angles for new max
-	int newMax=maxPos;
-	for (int i=0;i<360;i++)
-	    if (sensorVals[i] > sensorVals[maxPos])
-		newMax=i;
-	if (newMax!=maxPos) {
-	    if (abs(maxPos-newMax)>0) {
-		sprintf(fmtbuf,"Sensor lost old max: %d@%d changed to %d and new max is %d@%d",oldMax,position,sensor,sensorVals[newMax],newMax);
-		SerialUSB.println(fmtbuf);
-	    }
-	    maxPos=newMax;
-	}
-    }
-}
-
 void dumpsensor(void) {
     SerialUSB.print("sensor=[");
     for (int i=0;i<360;i++) {
