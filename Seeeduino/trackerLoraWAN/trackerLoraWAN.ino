@@ -34,12 +34,14 @@ void cmdexec(char *buf) {
       gpsusercommand(buf+1);
   else if (buf[0]=='I')
        imucommand(buf+1);
+  else if (buf[0]=='S')
+       steppercommand(buf+1);
 #ifdef EXTERNALBLE
   else if (buf[0]=='B')
       blecommand(buf+1);
 #endif
  else
-    SerialUSB.println("Expected (L)ora, (G)PS, (I)MU, or (B)LE command");
+    SerialUSB.println("Expected (L)ora, (G)PS, (I)MU, (S)tepper or (B)LE command");
 }
 
 void cmdread(void) {

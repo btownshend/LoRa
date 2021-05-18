@@ -196,3 +196,8 @@ void stepperloop() {
     static int minstack=100000; minstack=stackcheck("Stepper",minstack);
     yield();
 }
+
+void steppercommand(const char *cmd) {
+    if (cmd[0]=='d')
+	dumpsensor();
+}
