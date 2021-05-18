@@ -42,7 +42,8 @@ void gotoangle(float angle) {
     change = (change + STEPSPERREV / 2) % STEPSPERREV - STEPSPERREV / 2;
     //sprintf(fmtbuf,"cur=%d, new=%d, change=%d",curpos, newpos, change);
     //Serial.println(fmtbuf);
-    stepper.moveTo(curpos + change);
+    if (abs(change)>(stepper.isRunning()?0:4))  // Only start it moving is the required change is significant
+	stepper.moveTo(curpos + change);
 }
 
 void adjuststepper() {
