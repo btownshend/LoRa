@@ -47,8 +47,8 @@ Conflict -- only one external Serial port
 #define PIN_STEPPER2  3
 #define PIN_SERIAL3_TX       4   // PA14 SERCOM2:pad2  (D4 on connector)
 #define PIN_SERIAL3_RX       5  // PA15 SERCOM2:pad3  (D5 on connector)
-#define PIN_STEPPER3  4
-#define PIN_STEPPER4  5  // D7 is also connected to GPS PPS output (unused?)
+#define PIN_STEPPER3  6
+#define PIN_STEPPER4  7  // D7 is also connected to GPS PPS output (unused?)
 // D8,D9 are LoRa RST and DFU
 // D10-D13 are SPI (unused?)
 
