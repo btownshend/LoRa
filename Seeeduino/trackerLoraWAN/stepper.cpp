@@ -70,18 +70,21 @@ void steppersetup() {
     sprintf(fmtbuf,"Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation", maxspeed/2, tmax, degmax);
     SerialUSB.println(fmtbuf);
     for (int i=0;i<360;i++)
-	sensorVals[i]=0;
+	sensorVals[i]=-1;
 #ifdef USEINTERRUPTS
     setuptimer();
 #endif
 }
 
-void sensorcheck() {
+void sensorcheck_old() {
     // Check sensor
     int sensor=analogRead(SENSORPIN);
     int position=(stepper.currentPosition()/(STEPSPERREV/360))%360;
     while (position<0)
 	position+=360;
+    if (sensor==sensorVals[position])
+	return;  // No change
+    
     bool removedMax = false;  // Need to check full sensorVals array for new max if true
     int oldMax = sensorVals[maxPos];
     if (position==maxPos && sensor<oldMax)
@@ -111,6 +114,73 @@ void sensorcheck() {
 	}
     }
 }
+
+void dumpsensor(void) {
+    SerialUSB.print("sensor=[");
+    for (int i=0;i<360;i++) {
+	SerialUSB.print(sensorVals[i]);
+	if (i==359)
+	    SerialUSB.println("];");
+	else
+	    SerialUSB.print(",");
+    }
+}
+
+void sensorcheck() {
+    // Check sensor
+    int sensor=analogRead(SENSORPIN);
+    int position=(stepper.currentPosition()/(STEPSPERREV/360))%360;
+    static int nfound=0;
+    
+    while (position<0)
+	position+=360;
+    if (sensorVals[position]==-1) {
+	nfound++;
+	if (nfound%10==0) {
+	    SerialUSB.print("Sensed ");
+	    SerialUSB.print(nfound);
+	    SerialUSB.println(" positions");
+	}
+    }
+    sensorVals[position]=sensor;
+    static int minSensor=9999;
+    if (sensor<minSensor)
+	minSensor=sensor;
+    if (nfound==360) {
+	dumpsensor();
+	sprintf(fmtbuf,"min sensor=%d",minSensor);
+	SerialUSB.println(fmtbuf);
+	
+	// Find maximum weighted average in WINDOWSIZE window
+	int s=0,sx=0;
+	const int WINDOWSIZE=45;
+	for (int i=0;i<WINDOWSIZE;i++) {
+	    s+=(sensorVals[i]-minSensor);
+	    sx+=(sensorVals[i]-minSensor)*i;
+	}
+	int maxw=0, peakpos=0, peakloc=0;
+	for (int i=0;i<360;i++) {
+	    if (s>maxw) {
+		maxw=s;
+		peakpos=(sx/s)%360;
+		peakloc=i;
+	    }
+	    s+=sensorVals[(i+WINDOWSIZE)%360]-sensorVals[i];
+	    sx+=(sensorVals[(i+WINDOWSIZE)%360]-minSensor)*(i+WINDOWSIZE)-(sensorVals[i]-minSensor)*i;
+	}
+	if (peakpos>180)
+	    peakpos-=360;
+	sprintf(fmtbuf,"max=%d;sum=%d;range=%d;\nv=[v,struct('sensor',sensor,'max',max,'sum',sum,'range',range)];", peakpos,maxw,peakloc+1, peakloc+WINDOWSIZE);
+	SerialUSB.println(fmtbuf);
+	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360);
+	// Clear for another go
+	for (int i=0;i<360;i++) 
+	    sensorVals[i]=-1;   
+	nfound=0;
+	minSensor=9999;
+    }
+}
+
 
 void stepperloop() {
     // If we have a new value, adjust stepper
