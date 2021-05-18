@@ -7,11 +7,14 @@
 #include "imu.h"
 #include "ui.h"
 
+
 AccelStepper stepper; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
+int sensorVals[360];   // Sensor values for each angle
+int maxPos;  // Current angle with maximum sensor reading
+const int STEPSPERREV = 720;
+
 
 void gotoangle(float angle) {
-    const int STEPSPERREV = 720;
-
     int newpos = (int)(angle * STEPSPERREV / 360);
     int curpos = stepper.currentPosition();
     int change = newpos  - curpos;
@@ -47,11 +50,43 @@ void steppersetup() {
     SerialUSB.println(fmtbuf);
 }
 
+void sensorcheck() {
+    // Check sensor
+    int sensor=analogRead(SENSORPIN);
+    int position=(stepper.currentPosition()*360/STEPSPERREV)%360;
+    bool removedMax = false;  // Need to check full sensorVals array for new max if true
+    int oldMax = sensorVals[maxPos];
+    if (position==maxPos && sensor<oldMax)
+	// Removed prior maximum
+	removedMax=true;
+    else if (sensor > oldMax && abs(maxPos-position)>5) {
+	sprintf(fmtbuf,"Sensor max position changed from %d@%d to %d@%d",sensorVals[maxPos],maxPos,sensor,position);
+	SerialUSB.println(fmtbuf);
+	maxPos=position;  // New max position
+    }
+    // Updates sensorVals
+    sensorVals[position]=sensor;
+    if (removedMax) {
+	// Removed old maximum, check all angles for new max
+	int newMax=maxPos;
+	for (int i=0;i<360;i++)
+	    if (sensorVals[i] > sensorVals[maxPos])
+		maxPos=i;
+	if (newMax!=maxPos) {
+	    sprintf(fmtbuf,"Sensor max position changed from %d@%d to %d@%d",oldMax,position,sensorVals[maxPos],maxPos);
+	    SerialUSB.println(fmtbuf);
+	    maxPos=newMax;
+	}
+    }
+}
+
 void stepperloop() {
     // If we have a new value, adjust stepper
     //SerialUSB.println("stepperloop");
     adjuststepper();
     stepper.run();
+    sensorcheck();
+    
     //SerialUSB.println("stepperloop end");
     // Check stack
     static int minstack=100000; minstack=stackcheck("Stepper",minstack);
