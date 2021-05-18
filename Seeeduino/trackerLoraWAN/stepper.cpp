@@ -1,18 +1,39 @@
 // Define a stepper and the pins it will use
 #include <Scheduler.h>
 #include <AccelStepper.h>
+#include <SAMDTimerInterrupt.h>
 
 #include "globals.h"
 #include "stepper.h"
 #include "imu.h"
 #include "ui.h"
 
+#define USEINTERRUPTS
 
 AccelStepper stepper; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
 int sensorVals[360];   // Sensor values for each angle
 int maxPos;  // Current angle with maximum sensor reading
 const int STEPSPERREV = 720;
 
+#ifdef USEINTERRUPTS
+SAMDTimer ITimer0(TIMER_TC3);
+
+void TimerHandler0(void)
+{
+  // Doing something here inside ISR
+    stepper.run();
+}
+
+#define TIMER0_INTERVAL_US     100
+void setuptimer()
+{
+  // Interval in microsecs
+  if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_US, TimerHandler0))
+    Serial.println("Starting  ITimer0 OK, millis() = " + String(millis()));
+  else
+    Serial.println("Can't set ITimer0. Select another freq. or timer");
+}
+#endif
 
 void gotoangle(float angle) {
     int newpos = (int)(angle * STEPSPERREV / 360);
@@ -50,6 +71,9 @@ void steppersetup() {
     SerialUSB.println(fmtbuf);
     for (int i=0;i<360;i++)
 	sensorVals[i]=0;
+#ifdef USEINTERRUPTS
+    setuptimer();
+#endif
 }
 
 void sensorcheck() {
@@ -92,7 +116,9 @@ void stepperloop() {
     // If we have a new value, adjust stepper
     //SerialUSB.println("stepperloop");
     adjuststepper();
+#ifndef USEINTERRUPTS
     stepper.run();
+#endif
     sensorcheck();
     
     //SerialUSB.println("stepperloop end");
