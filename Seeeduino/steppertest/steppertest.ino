@@ -11,8 +11,18 @@ char fmtbuf[100];
 void setup()
 {
     Serial.begin(115200);
-    stepper.setMaxSpeed(3600);
-    stepper.setAcceleration(12000 / 100);
+    delay(2000);
+    SerialUSB.println("steppertest");
+    
+    const int maxspeed=1200; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s
+    const int maxaccel=12000;    // maxspeed/maxaccel gives time to reach full speed
+    stepper.setMaxSpeed(maxspeed);  
+    stepper.setAcceleration(maxaccel);   // Acceleration tuned for the right "look" (4000 step/s/s will get it up to vmax after rotating 90 deg, but seems to lose steps then)
+    float tmax=maxspeed*1.0/maxaccel;
+    float degmax=maxaccel*tmax*tmax/2/2;
+    sprintf(fmtbuf,"Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation", maxspeed/2, tmax, degmax);
+    SerialUSB.println(fmtbuf);
+
     pinMode(SENSORPIN, INPUT);
 }
 
@@ -117,14 +127,50 @@ void test3() {
     }
 }
 
+void test4() {
+    const long maxval=STEPSPERREV*10;
+    if (stepper.distanceToGo() == 0) {
+	static unsigned long lastnintr=0;
+	static unsigned long lasttime=0;
+	sprintf(fmtbuf,"nintr=%d, dt=%d, period=%.0f usec", nintr-lastnintr,millis()-lasttime,(millis()-lasttime)*1000.0/(nintr-lastnintr));
+	lastnintr=nintr; lasttime=millis();
+	SerialUSB.println(fmtbuf);
+	if (stepper.currentPosition() <= 0) {
+	    stepper.moveTo(maxval);
+	    SerialUSB.println("fwd");
+	} else {
+	    stepper.moveTo(0);
+	    SerialUSB.println("rev");
+	}
+    }
+    int s=getsensor();
+    static int lastPos=0;
+    static int lastTime=0;
+    int curPos=stepper.currentPosition();
+    int change = abs(lastPos-curPos);
+    if (s>300 && change>STEPSPERREV/4) {
+	int deltat=millis()-lastTime;
+	int stepspersec = change*1000/deltat;
+	SerialUSB.print(curPos);
+	SerialUSB.print(",");
+	SerialUSB.println(stepspersec);
+	lastTime+=deltat;
+	lastPos=curPos;
+    }
+}
+
 void loop() {
-    const int runtest = 3;
+    const int runtest = 4;
     if (runtest==1)
 	test1();
     else if (runtest==2)
 	test2();
     else if (runtest==3)
 	test3();
-    
+    else if (runtest==4)
+	test4();
+    else
+	SerialUSB.println("Bad test");
+    delay(7);
     stepper.run();
 }
