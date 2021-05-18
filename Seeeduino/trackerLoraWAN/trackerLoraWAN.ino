@@ -117,8 +117,7 @@ void setup(void) {
 #endif
 #ifdef EXTERNALBLE
   SerialUSB.println("External BLE");
-#else
-	Serial3.begin(9600);
+  blesetup();
 #endif	
   
   imusetup();
