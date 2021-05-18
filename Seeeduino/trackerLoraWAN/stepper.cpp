@@ -14,6 +14,7 @@ AccelStepper stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2,PIN_STEPP
 int sensorVals[360];   // Sensor values for each angle
 int maxPos;  // Current angle with maximum sensor reading
 const int STEPSPERREV = 720;
+const int NORTHOFFSET = 0;   // Offset in steps from sensor-based zero to position with needle pointing north
 
 #ifdef USEINTERRUPTS
 SAMDTimer ITimer0(TIMER_TC3);
@@ -134,7 +135,7 @@ void sensorcheck() {
 	    peakpos-=360;
 	sprintf(fmtbuf,"max=%d;sum=%d;range=%d;\nv=[v,struct('sensor',sensor,'max',max,'sum',sum,'range',range)];", peakpos,maxw,peakloc+1, peakloc+WINDOWSIZE);
 	SerialUSB.println(fmtbuf);
-	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360);
+	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360+NORTHOFFSET);
 	// Clear for another go
 	for (int i=0;i<360;i++) 
 	    sensorVals[i]=-1;   
