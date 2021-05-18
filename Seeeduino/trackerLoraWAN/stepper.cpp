@@ -10,7 +10,7 @@
 
 #define USEINTERRUPTS
 
-AccelStepper stepper; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
+AccelStepper stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2,PIN_STEPPER3,PIN_STEPPER4);
 int sensorVals[360];   // Sensor values for each angle
 int maxPos;  // Current angle with maximum sensor reading
 const int STEPSPERREV = 720;
@@ -79,7 +79,7 @@ void steppersetup() {
 
 void sensorcheck_old() {
     // Check sensor
-    int sensor=analogRead(SENSORPIN);
+    int sensor=analogRead(PIN_SENSOR);
     int position=(stepper.currentPosition()/(STEPSPERREV/360))%360;
     while (position<0)
 	position+=360;
@@ -129,7 +129,7 @@ void dumpsensor(void) {
 
 void sensorcheck() {
     // Check sensor
-    int sensor=analogRead(SENSORPIN);
+    int sensor=analogRead(PIN_SENSOR);
     int position=(stepper.currentPosition()/(STEPSPERREV/360))%360;
     static int nfound=0;
     
