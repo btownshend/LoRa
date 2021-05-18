@@ -1,12 +1,37 @@
+#include <SAMDTimerInterrupt.h>
 #include <AccelStepper.h>
 
 // Define a stepper and the pins it will use
 AccelStepper stepper; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
+#define USEINTERRUPTS
 
 
 const int STEPSPERREV = 720;
 const int SENSORPIN = A0;
 char fmtbuf[100];
+unsigned long nintr=0;
+
+#ifdef USEINTERRUPTS
+    SAMDTimer ITimer0(TIMER_TC3);
+
+void TimerHandler0(void)
+{
+  // Doing something here inside ISR
+    stepper.run();
+    nintr+=1;
+}
+
+#define TIMER0_INTERVAL_US     100
+void setuptimer()
+{
+  // Interval in microsecs
+  if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_US, TimerHandler0))
+    Serial.println("Starting  ITimer0 OK, millis() = " + String(millis()));
+  else
+    Serial.println("Can't set ITimer0. Select another freq. or timer");
+}
+#endif
+
 
 void setup()
 {
@@ -24,6 +49,9 @@ void setup()
     SerialUSB.println(fmtbuf);
 
     pinMode(SENSORPIN, INPUT);
+#ifdef USEINTERRUPTS
+    setuptimer();
+#endif
 }
 
 void gotoangle(int angle) {
@@ -172,5 +200,7 @@ void loop() {
     else
 	SerialUSB.println("Bad test");
     delay(7);
+#ifndef USEINTERRUPTS
     stepper.run();
+#endif
 }
