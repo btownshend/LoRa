@@ -7,7 +7,7 @@
 // If there's a complie error in I2Cdev.cpp, need to add #define BUFFER_LENGTH 32 in I2Cdev.h in library
 #include "imu.h"
 #include "ui.h"
-#include "stepper.h"
+#include "needle.h"
 
 // 9DOF
 float acc_mag;  // Total magnitude of acceleration

@@ -4,7 +4,7 @@
 #include <SAMDTimerInterrupt.h>
 
 #include "globals.h"
-#include "stepper.h"
+#include "needle.h"
 #include "imu.h"
 #include "ui.h"
 
@@ -75,7 +75,7 @@ void adjuststepper() {
     }
 }
 
-void steppersetup() {
+void needlesetup() {
     const int maxspeed=1200; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s
     const int maxaccel=1200;    // maxspeed/maxaccel gives time to reach full speed
     stepper.setMaxSpeed(maxspeed);  
@@ -165,7 +165,7 @@ void sensorcheck() {
 }
 
 
-void stepperloop() {
+void needleloop() {
     // If we have a new value, adjust stepper
     //SerialUSB.println("stepperloop");
     adjuststepper();
@@ -246,7 +246,7 @@ void stepperfield() {
 }
     
 
-void steppercommand(const char *cmd) {
+void needlecommand(const char *cmd) {
     if (cmd[0]=='d' || cmd[0]=='D') {
 	dumpsensor();
 	SerialUSB.println("");

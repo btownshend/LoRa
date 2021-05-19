@@ -2,7 +2,7 @@
 #include "gps.h"
 #include "ble.h"
 #include "imu.h"
-#include "stepper.h"
+#include "needle.h"
 #include "globals.h"
 #include "battery.h"
 #include "lorawan.h"
@@ -32,14 +32,14 @@ void cmdexec(char *buf) {
       gpsusercommand(buf+1);
   else if (buf[0]=='I')
        imu.command(buf+1);
-  else if (buf[0]=='S')
-       steppercommand(buf+1);
+  else if (buf[0]=='N')
+       needlecommand(buf+1);
 #ifdef EXTERNALBLE
   else if (buf[0]=='B')
       blecommand(buf+1);
 #endif
  else
-    SerialUSB.println("Expected (L)ora, (G)PS, (I)MU, (S)tepper or (B)LE command");
+    SerialUSB.println("Expected (L)ora, (G)PS, (I)MU, (N)eedle or (B)LE command");
 }
 
 void cmdread(void) {
@@ -121,7 +121,7 @@ void setup(void) {
 #endif	
   
   imu.setup();
-  steppersetup();
+  needlesetup();
   gpssetup();
   batterysetup();
   lorawansetup();
@@ -134,7 +134,7 @@ void setup(void) {
   
   if (imu.haveimu)
       Scheduler.startLoop(imuloop,2048);
-  Scheduler.startLoop(stepperloop,2048);
+  Scheduler.startLoop(needleloop,2048);
   Scheduler.startLoop(gpsloop);
   Scheduler.startLoop(lorawanloop,2048);  // Needs more than 1024 bytes of stack space or sprintf causes problem
   Scheduler.startLoop(loadmonitorloop);
