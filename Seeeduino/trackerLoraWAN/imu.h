@@ -2,6 +2,7 @@ extern short acc_x, acc_y, acc_z;
 extern short orient_x, orient_y,orient_z;  // Orientation, updated only when device is not accelerating (other than gravity)
 extern short gyro_x, gyro_y, gyro_z;
 extern short mag_x, mag_y, mag_z;
+extern short rawmag_x, rawmag_y, rawmag_z;
 
 extern bool haveimu;
 

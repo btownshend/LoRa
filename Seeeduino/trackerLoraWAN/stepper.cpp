@@ -16,6 +16,7 @@ int maxPos;  // Current angle with maximum sensor reading
 const int STEPSPERREV = 720;
 const int NORTHOFFSET = -5;   // Offset in steps from sensor-based zero to position with needle pointing north,, positive values rotate needle CCWt
 int spinning = 0;  // Number of rotations of needle to make
+bool fieldtesting = false;  // True when testing field - disable stepping
 
 #ifdef USEINTERRUPTS
 SAMDTimer ITimer0(TIMER_TC3);
@@ -48,8 +49,12 @@ void gotoangle(float angle) {
 	stepper.moveTo(curpos + change);
 }
 
+void stepperadvance(void) { // Move ahead one step
+    stepper.move(1);
+}
+
 void adjuststepper() {
-    if (spinning>0) {
+    if (spinning>0 || fieldtesting) {
 	return;  // No adjustments while spinning
     }
     if (!isstill())
@@ -175,6 +180,72 @@ void stepperloop() {
     yield();
 }
 
+// Measure effect of stepper on IMU magnetometer
+void stepperfield() {
+    fieldtesting=true;
+    stepper.moveTo(0);
+    while (stepper.isRunning());  // wait until moved
+    int sx[4],sy[4],sz[4],sx2[4],sy2[4],sz2[4];
+    for (int phase=0;phase<4;phase++) { // Phases
+	sx[phase]=0;
+	sy[phase]=0;
+	sz[phase]=0;
+	sx2[phase]=0;
+	sy2[phase]=0;
+	sz2[phase]=0;
+    }
+	
+    const int ncycles=20;
+    sprintf(fmtbuf,"Running %d cycles: ",ncycles);
+    SerialUSB.print(fmtbuf);
+    for (int i=0;i<ncycles;i++) { // Cycles
+	for (int phase=0;phase<4;phase++) { // Phases
+	    SerialUSB.print(phase);
+	    delay(100);    // Wait for magnetometer @10Hz
+	    sx[phase]+=rawmag_x;
+	    sy[phase]+=rawmag_y;
+	    sz[phase]+=rawmag_z;
+	    sx2[phase]+=rawmag_x*rawmag_x;
+	    sy2[phase]+=rawmag_y*rawmag_y;
+	    sz2[phase]+=rawmag_z*rawmag_z;
+	    stepper.move(1);   // Advance to next phase
+	    //while (stepper.isRunning()); // wait until moved
+	}
+    }
+    SerialUSB.println("done");
+    float calib[4][3];
+    for (int phase=0;phase<4;phase++) { // Phases
+	float mx=sx[phase]*1.0/ncycles;
+	float stdx=sqrt(sx2[phase]*1.0/ncycles-mx*mx);
+	float my=sy[phase]*1.0/ncycles;
+	float stdy=sqrt(sy2[phase]*1.0/ncycles-my*my);
+	float mz=sz[phase]*1.0/ncycles;
+	float stdz=sqrt(sz2[phase]*1.0/ncycles-mz*mz);
+	sprintf(fmtbuf,"Phase %d: mx=%.0f += %.0f, my=%.0f += %.0f, mz=%.0f += %.0f",
+		phase,mx,stdx,my,stdy,mz,stdy);
+	SerialUSB.println(fmtbuf);
+	calib[phase][0]=mx;
+	calib[phase][1]=my;
+	calib[phase][2]=mz;
+    }
+    // Remove the means to find the phase offsets
+    for (int i=0;i<3;i++) {
+	float t=0;
+	for (int phase=0;phase<4;phase++) { // Phases
+	    t+=calib[phase][i];
+	}
+	for (int phase=0;phase<4;phase++) { // Phases
+	    calib[phase][i]-=t/4;
+	}
+    }
+    for (int phase=0;phase<4;phase++) { // Phases
+	sprintf(fmtbuf,"Phase %d: x:%5.0f, y:%5.0f, z:%5.0f", phase, calib[phase][0],calib[phase][1],calib[phase][2]);
+	SerialUSB.println(fmtbuf);
+    }
+    fieldtesting=false;
+}
+    
+
 void steppercommand(const char *cmd) {
     if (cmd[0]=='d' || cmd[0]=='D') {
 	dumpsensor();
@@ -183,5 +254,8 @@ void steppercommand(const char *cmd) {
 	spinning=2;
 	SerialUSB.println("Spinning");
 	stepper.move(STEPSPERREV/360);
+    } else if (cmd[0]=='f' || cmd[0]=='F') {
+	SerialUSB.println("Field measurement");
+	stepperfield();
     }
 }
