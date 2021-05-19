@@ -126,6 +126,8 @@ void imusetup() {
     }
   
     SerialUSB.println("9DOF Initialized");
+    sprintf(fmtbuf,"Sampling Rate: AG:%d, M: %d",(int)imu.getSampleRate(), (int)imu.getCompassSampleRate());
+    SerialUSB.println(fmtbuf);
 
     magCal = calStorage.read();
     if (magCal.offset[0]==0.0) {
