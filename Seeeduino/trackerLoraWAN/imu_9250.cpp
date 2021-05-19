@@ -11,9 +11,14 @@
 
 // 9DOF
 short acc_x, acc_y, acc_z;
+short orient_x, orient_y, orient_z;
 short gyro_x, gyro_y, gyro_z;
 short rawmag_x, rawmag_y, rawmag_z;  // As read from AK09918
 short mag_x, mag_y, mag_z;  // After low pass filtering and scaling
+float acc_mag;  // Total magnitude of acceleration
+float acc_external;  // External acceleration
+const float stillaccel = 0.1f;  // External acceleration less than this to be considered still
+
 bool haveimu = false;
 typedef struct {
     // Calibration of magnetometer
@@ -206,6 +211,15 @@ float getHeading(void) {
     return imu.computeCompassHeading();
 }
 
+bool isstill(void) {
+    return acc_external < stillaccel;
+}
+
+float gettilt(void) {
+    float xymag=sqrt(1.0f*orient_x*orient_x+1.0f*orient_y*orient_y);
+    return atan2(xymag,1.0f*orient_z)*57.3;
+}
+
 void imuloop() {
     // Check for new data
     if (imu.dataReady()) {
@@ -216,13 +230,21 @@ void imuloop() {
 	gyro_x = imu.gx; gyro_y = imu.gy; gyro_z = imu.gz;  // Normal orientation
 	acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation
 	updateCalibration();  
+
+	acc_mag = sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y+1.0f*acc_z*acc_z)/2048;
+	acc_external = fabs(acc_mag-1);
+
+	if (isstill()) {
+	    orient_x=acc_x;orient_y=acc_y;orient_z=acc_z;
+	}
+    
 	static unsigned long lastdbg = 0;
 	if (millis() - lastdbg > 10000 ) {
 	    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
 	    sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field);
 	    SerialUSB.print(fmtbuf);
 	    imu.computeEulerAngles(true);
-	    sprintf(fmtbuf, ", Roll: %.0f, Pitch: %.0f, Yaw: %.0f, Heading: %.0f", imu.roll,imu.pitch,imu.yaw,getHeading());
+	    sprintf(fmtbuf, ", Roll: %.0f, Pitch: %.0f, Yaw: %.0f, Heading: %.0f, Tilt: %.0f", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
 	    SerialUSB.println(fmtbuf);
 	    lastdbg = millis();
 	}
@@ -236,7 +258,7 @@ void imuloop() {
 	if ( imu.tapAvailable() )   {
 	    sprintf(fmtbuf,"Tap %d, %d\n",imu.getTapDir(), imu.getTapCount());
 	    SerialUSB.println(fmtbuf);
-	    uitap(90);
+	    uitap(gettilt());
 	}
     }
 
