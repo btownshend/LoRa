@@ -18,8 +18,8 @@ Conflict -- only one external Serial port
 #endif
 
 // Define one of the following to set the IMU type
-//#define IMU_9250
-#define IMU_AK
+#define IMU_9250
+//#define IMU_AK
 
 #ifdef EXTERNALGPS
 #define SerialGPS Serial3   // External serial port
