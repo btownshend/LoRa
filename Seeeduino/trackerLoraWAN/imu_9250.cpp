@@ -8,6 +8,7 @@
 // If there's a complie error in I2Cdev.cpp, need to add #define BUFFER_LENGTH 32 in I2Cdev.h in library
 
 #include "ui.h"
+#include "stepper.h"
 
 // 9DOF
 short acc_x, acc_y, acc_z;
@@ -279,10 +280,11 @@ void imumonitor() {
     SerialUSB.println("+++IMON+++");
     while (SerialUSB.available())
 	SerialUSB.read();
+    int spos=0;
     while (true) {
 	if (imu.dataReady()) {
 	    imu.update(UPDATE_ACCEL|UPDATE_GYRO|UPDATE_COMPASS);
-	    sprintf(fmtbuf,"Raw:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz);
+	    sprintf(fmtbuf,"Raw:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz,spos);
 	    SerialUSB.println(fmtbuf);
 	}
 	if (SerialUSB.available()) {
@@ -291,6 +293,10 @@ void imumonitor() {
 	    SerialUSB.println(c);
 	    if (c=='x')
 		break;
+	    else if (c=='s') {
+		stepperadvance();
+		spos++;
+	    }
 	}
     }
     SerialUSB.println("+++END+++");
