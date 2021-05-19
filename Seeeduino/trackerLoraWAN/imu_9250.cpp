@@ -211,7 +211,18 @@ void updateCalibration() {
 
 float getHeading(void) {
     // Get current heading in degrees
-    return imu.computeCompassHeading();
+
+    // roll/pitch in radian
+    double roll = atan2((float)acc_y, (float)acc_z);
+    double pitch = atan2(-(float)acc_x, sqrt((float)acc_y * acc_y + (float)acc_z * acc_z));
+
+    double Xheading = mag_x * cos(pitch) + mag_y * sin(roll) * sin(pitch) + mag_z * cos(roll) * sin(pitch);
+    double Yheading = mag_y * cos(roll) - mag_z * sin(pitch);
+
+    const double declination = -6;   // Magnetic declination
+    float heading = 180 + 57.3 * atan2(Yheading, Xheading) + declination;
+    
+    return heading;
 }
 
 bool isstill(void) {
@@ -320,7 +331,11 @@ void imucommand(const char *cmd) {
 	    SerialUSB.print(nr);
 	    SerialUSB.println("/12 fields");
 	}
+    } else if (strncmp(cmd,"CAL",3)==0) {
+	//disableStepper();
+	
+	//enableStepper();
     } else
-	SerialUSB.println("Unexpected IMU command");
+	SerialUSB.println("Expected IMON,  IMAGSET, or ICAL");
 }
 #endif /* IMU_9250 */
