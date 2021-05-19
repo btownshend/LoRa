@@ -33,7 +33,7 @@ void cmdexec(char *buf) {
   else if (buf[0]=='I')
        imu.command(buf+1);
   else if (buf[0]=='N')
-       needlecommand(buf+1);
+       needle.command(buf+1);
 #ifdef EXTERNALBLE
   else if (buf[0]=='B')
       blecommand(buf+1);
@@ -121,7 +121,7 @@ void setup(void) {
 #endif	
   
   imu.setup();
-  needlesetup();
+  needle.setup();
   gpssetup();
   batterysetup();
   lorawansetup();

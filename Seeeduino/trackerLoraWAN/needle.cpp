@@ -1,6 +1,5 @@
 // Define a stepper and the pins it will use
 #include <Scheduler.h>
-#include <AccelStepper.h>
 #include <SAMDTimerInterrupt.h>
 
 #include "globals.h"
@@ -10,13 +9,7 @@
 
 #define USEINTERRUPTS
 
-AccelStepper stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2,PIN_STEPPER3,PIN_STEPPER4);
-int sensorVals[360];   // Sensor values for each angle
-int maxPos;  // Current angle with maximum sensor reading
-const int STEPSPERREV = 720;
-const int NORTHOFFSET = -5;   // Offset in steps from sensor-based zero to position with needle pointing north,, positive values rotate needle CCWt
-int spinning = 0;  // Number of rotations of needle to make
-bool fieldtesting = false;  // True when testing field - disable stepping
+Needle needle;
 
 #ifdef USEINTERRUPTS
 SAMDTimer ITimer0(TIMER_TC3);
@@ -24,7 +17,7 @@ SAMDTimer ITimer0(TIMER_TC3);
 void TimerHandler0(void)
 {
   // Doing something here inside ISR
-    stepper.run();
+    needle.run();
 }
 
 #define TIMER0_INTERVAL_US     100
@@ -36,9 +29,13 @@ void setuptimer()
   else
     Serial.println("Can't set ITimer0. Select another freq. or timer");
 }
-#endif
+#endif  // USEINTERRUPTS
 
-void gotoangle(float angle) {
+Needle::Needle(void):  stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2,PIN_STEPPER3,PIN_STEPPER4) {
+    ;
+}
+
+void Needle::gotoangle(float angle) {
     int newpos = (int)(angle * STEPSPERREV / 360);
     int curpos = stepper.currentPosition();
     int change = newpos  - curpos;
@@ -49,11 +46,11 @@ void gotoangle(float angle) {
 	stepper.moveTo(curpos + change);
 }
 
-void stepperadvance(void) { // Move ahead one step
+void Needle::stepperadvance(void) { // Move ahead one step
     stepper.move(1);
 }
 
-void adjuststepper() {
+void Needle::adjuststepper(void) {
     if (spinning>0 || fieldtesting) {
 	return;  // No adjustments while spinning
     }
@@ -75,7 +72,7 @@ void adjuststepper() {
     }
 }
 
-void needlesetup() {
+void Needle::setup(void) {
     const int maxspeed=1200; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s
     const int maxaccel=1200;    // maxspeed/maxaccel gives time to reach full speed
     stepper.setMaxSpeed(maxspeed);  
@@ -91,7 +88,7 @@ void needlesetup() {
 #endif
 }
 
-void dumpsensor(void) {
+void Needle::dumpsensor(void) {
     SerialUSB.print("sensor=[");
     for (int i=0;i<360;i++) {
 	SerialUSB.print(sensorVals[i]);
@@ -102,7 +99,7 @@ void dumpsensor(void) {
     }
 }
 
-void sensorcheck() {
+void Needle::sensorcheck(void) {
     // Check sensor
 
     int position=((stepper.currentPosition()-NORTHOFFSET)/(STEPSPERREV/360))%360;
@@ -165,7 +162,7 @@ void sensorcheck() {
 }
 
 
-void needleloop() {
+void Needle::loop(void) {
     // If we have a new value, adjust stepper
     //SerialUSB.println("stepperloop");
     adjuststepper();
@@ -181,7 +178,7 @@ void needleloop() {
 }
 
 // Measure effect of stepper on IMU magnetometer
-void stepperfield() {
+void Needle::stepperfield(void) {
     fieldtesting=true;
     stepper.moveTo(0);
     while (stepper.isRunning());  // wait until moved
@@ -246,7 +243,7 @@ void stepperfield() {
 }
     
 
-void needlecommand(const char *cmd) {
+void Needle::command(const char *cmd) {
     if (cmd[0]=='d' || cmd[0]=='D') {
 	dumpsensor();
 	SerialUSB.println("");

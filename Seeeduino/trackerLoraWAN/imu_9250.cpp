@@ -297,7 +297,7 @@ void IMU::monitor(void) {
 	    if (c=='x')
 		break;
 	    else if (c=='s') {
-		stepperadvance();
+		needle.stepperadvance();
 		spos++;
 	    }
 	}
