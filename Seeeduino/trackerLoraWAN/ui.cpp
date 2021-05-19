@@ -15,7 +15,7 @@ bool uiactive(void) {
 int getuisetting(void) {
     static int currsetting = 0;  // Keep a persistent value
     // Can update if the device is still
-    int rotation = -(int)(atan2(orient_y,orient_x)*57.3);
+    int rotation = -(int)(atan2(imu.orient_y,imu.orient_x)*57.3);
     while (rotation<0)
 	rotation+=360;
     int rotdiff=(currsetting*spacing-rotation+360)%360;
@@ -23,7 +23,7 @@ int getuisetting(void) {
 	// Quantize to spacing deg so it clicks
 	int newsetting = (int((rotation+(spacing/2.0))/spacing))%8;
 	if (newsetting!=currsetting) {
-	    sprintf(fmtbuf,"UI setting %d -> %d (acc=[%d,%d,%d])", currsetting, newsetting,acc_x,acc_y,acc_z);
+	    sprintf(fmtbuf,"UI setting %d -> %d (acc=[%d,%d,%d])", currsetting, newsetting,imu.acc_x,imu.acc_y,imu.acc_z);
 	    SerialUSB.println(fmtbuf);
 	    currsetting=newsetting;
 	}

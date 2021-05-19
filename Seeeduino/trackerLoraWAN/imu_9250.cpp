@@ -3,24 +3,18 @@
 
 #include <Scheduler.h>
 #include <FlashStorage.h>
-#include <SparkFunMPU9250-DMP.h>
 #include <Wire.h>
 // If there's a complie error in I2Cdev.cpp, need to add #define BUFFER_LENGTH 32 in I2Cdev.h in library
-
+#include "imu.h"
 #include "ui.h"
 #include "stepper.h"
 
 // 9DOF
-short acc_x, acc_y, acc_z;
-short orient_x, orient_y, orient_z;
-short gyro_x, gyro_y, gyro_z;
-short rawmag_x, rawmag_y, rawmag_z;  // As read from AK09918
-short mag_x, mag_y, mag_z;  // After low pass filtering and scaling
 float acc_mag;  // Total magnitude of acceleration
 float acc_external;  // External acceleration
 const float stillaccel = 0.01f;  // External acceleration less than this to be considered still
 
-bool haveimu = false;
+
 typedef struct {
     // Calibration of magnetometer
     // Calibrated val = (raw-offset)*mat
@@ -30,11 +24,9 @@ typedef struct {
 
 FlashStorage(calStorage, magCalType);
 static magCalType magCal;
+IMU imu;
 
-// Private
-static MPU9250_DMP imu;
-
-void imusetup() {
+void IMU::setup() {
     SerialUSB.println("imusetup");
     delay(100);
     
@@ -137,7 +129,7 @@ void imusetup() {
     haveimu=true;
 }
 
-void updateCalibration() {
+void IMU::updateCalibration(void) {
     static short mag_xmin = -10, mag_xmax = 10, mag_ymin = -10, mag_ymax = 10, mag_zmin = -10, mag_zmax = 10;
     bool changed = false;
     if (rawmag_x < mag_xmin) {
@@ -209,7 +201,7 @@ void updateCalibration() {
 }
 
 
-float getHeading(void) {
+float IMU::getHeading(void) {
     // Get current heading in degrees
 
     // roll/pitch in radian
@@ -225,16 +217,16 @@ float getHeading(void) {
     return heading;
 }
 
-bool isstill(void) {
+bool IMU::isstill(void) {
     return acc_external < stillaccel;
 }
 
-float gettilt(void) {
+float IMU::gettilt(void) {
     float xymag=sqrt(1.0f*orient_x*orient_x+1.0f*orient_y*orient_y);
     return atan2(xymag,1.0f*orient_z)*57.3;
 }
 
-void imuloop() {
+void IMU::loop() {
     // Check for new data
     if (imu.dataReady()) {
 	// Got new data, save it
@@ -285,7 +277,7 @@ void imuloop() {
     yield();
 }
 
-void imumonitor() {
+void IMU::monitor(void) {
     // Go into IMU monitoring until another character is received
     // Do not call yield or delay or another task will execute
     SerialUSB.println("+++IMON+++");
@@ -313,9 +305,9 @@ void imumonitor() {
     SerialUSB.println("+++END+++");
 }
 
-void imucommand(const char *cmd) {
+void IMU::command(const char *cmd) {
     if (strcmp(cmd,"MON")==0)
-	imumonitor();
+	monitor();
     else if (strncmp(cmd,"MAGSET",6)==0) {
 	float offset[3], mat[3][3];
 	int nr=sscanf(cmd,"MAGSET %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",

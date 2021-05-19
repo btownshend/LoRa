@@ -245,42 +245,42 @@ void send() {
 	*dptr++ = ((unsigned char *)&bv)[0];
     }
 
-    if (haveimu) {
+    if (imu.haveimu) {
 	if (maxmsglen > 12 + (dptr - data)) {
 	    // magnet x (0x09,0x02)
 	    *dptr++ = 0x09;  *dptr++ = 0x02;
-	    *dptr++ = ((unsigned char *)&mag_x)[1];
-	    *dptr++ = ((unsigned char *)&mag_x)[0];
+	    *dptr++ = ((unsigned char *)&imu.mag_x)[1];
+	    *dptr++ = ((unsigned char *)&imu.mag_x)[0];
 	    // magnet y (0x0a,0x02)
 	    *dptr++ = 0x0a;  *dptr++ = 0x02;
-	    *dptr++ = ((unsigned char *)&mag_y)[1];
-	    *dptr++ = ((unsigned char *)&mag_y)[0];
+	    *dptr++ = ((unsigned char *)&imu.mag_y)[1];
+	    *dptr++ = ((unsigned char *)&imu.mag_y)[0];
 	    // magnet z (0x0b,0x02)
 	    *dptr++ = 0x0b;  *dptr++ = 0x02;
-	    *dptr++ = ((unsigned char *)&mag_z)[1];
-	    *dptr++ = ((unsigned char *)&mag_z)[0];
+	    *dptr++ = ((unsigned char *)&imu.mag_z)[1];
+	    *dptr++ = ((unsigned char *)&imu.mag_z)[0];
 	}
 
 	if (maxmsglen > 8 + (dptr - data)) {
 	    // accel
 	    *dptr++ = 0x03;  *dptr++ = 0x71;
-	    *dptr++ = ((unsigned char *)&acc_x)[1];
-	    *dptr++ = ((unsigned char *)&acc_x)[0];
-	    *dptr++ = ((unsigned char *)&acc_y)[1];
-	    *dptr++ = ((unsigned char *)&acc_y)[0];
-	    *dptr++ = ((unsigned char *)&acc_z)[1];
-	    *dptr++ = ((unsigned char *)&acc_z)[0];
+	    *dptr++ = ((unsigned char *)&imu.acc_x)[1];
+	    *dptr++ = ((unsigned char *)&imu.acc_x)[0];
+	    *dptr++ = ((unsigned char *)&imu.acc_y)[1];
+	    *dptr++ = ((unsigned char *)&imu.acc_y)[0];
+	    *dptr++ = ((unsigned char *)&imu.acc_z)[1];
+	    *dptr++ = ((unsigned char *)&imu.acc_z)[0];
 	}
 
 	if (maxmsglen > 8 + (dptr - data)) {
 	    // gyro
 	    *dptr++ = 0x05;  *dptr++ = 0x86;
-	    *dptr++ = ((unsigned char *)&gyro_x)[1];
-	    *dptr++ = ((unsigned char *)&gyro_x)[0];
-	    *dptr++ = ((unsigned char *)&gyro_y)[1];
-	    *dptr++ = ((unsigned char *)&gyro_y)[0];
-	    *dptr++ = ((unsigned char *)&gyro_z)[1];
-	    *dptr++ = ((unsigned char *)&gyro_z)[0];
+	    *dptr++ = ((unsigned char *)&imu.gyro_x)[1];
+	    *dptr++ = ((unsigned char *)&imu.gyro_x)[0];
+	    *dptr++ = ((unsigned char *)&imu.gyro_y)[1];
+	    *dptr++ = ((unsigned char *)&imu.gyro_y)[0];
+	    *dptr++ = ((unsigned char *)&imu.gyro_z)[1];
+	    *dptr++ = ((unsigned char *)&imu.gyro_z)[0];
 	}
     }
     int sendStart = millis();

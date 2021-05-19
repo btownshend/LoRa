@@ -57,7 +57,7 @@ void adjuststepper() {
     if (spinning>0 || fieldtesting) {
 	return;  // No adjustments while spinning
     }
-    if (!isstill())
+    if (!imu.isstill())
 	// Unit accelerating, no update
 	return;
     
@@ -66,7 +66,7 @@ void adjuststepper() {
     } else {
 	// Adjust stepper accordinly
 	static float priorHeading = 0;
-	float heading = getHeading();
+	float heading = imu.getHeading();
     
 	if (abs(heading-priorHeading)>=5)  {
 	    priorHeading=heading;
@@ -202,12 +202,12 @@ void stepperfield() {
 	for (int phase=0;phase<4;phase++) { // Phases
 	    SerialUSB.print(phase);
 	    delay(100);    // Wait for magnetometer @10Hz
-	    sx[phase]+=rawmag_x;
-	    sy[phase]+=rawmag_y;
-	    sz[phase]+=rawmag_z;
-	    sx2[phase]+=rawmag_x*rawmag_x;
-	    sy2[phase]+=rawmag_y*rawmag_y;
-	    sz2[phase]+=rawmag_z*rawmag_z;
+	    sx[phase]+=imu.rawmag_x;
+	    sy[phase]+=imu.rawmag_y;
+	    sz[phase]+=imu.rawmag_z;
+	    sx2[phase]+=imu.rawmag_x*imu.rawmag_x;
+	    sy2[phase]+=imu.rawmag_y*imu.rawmag_y;
+	    sz2[phase]+=imu.rawmag_z*imu.rawmag_z;
 	    stepper.move(1);   // Advance to next phase
 	    //while (stepper.isRunning()); // wait until moved
 	}

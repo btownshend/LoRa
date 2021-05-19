@@ -30,7 +30,7 @@ static magCalType magCal;
 static AK09918 ak09918;
 static ICM20600 icm20600(true);
 
-void imusetup() {
+void IMU::setup() {
     SerialUSB.println("imusetup");
 
     // Enable Grove connectors
@@ -208,7 +208,7 @@ bool update9DOF() {
     return false;
 }
 
-float getHeading(void) {
+float IMU::getHeading(void) {
     // Get current heading in degrees
 
     // roll/pitch in radian
@@ -232,7 +232,7 @@ float getHeading(void) {
     return heading;
 }
 
-void imuloop() {
+void IMU::loop() {
     update9DOF();
     static unsigned long lastdbg = 0;
 
@@ -271,7 +271,7 @@ void imumonitor() {
     SerialUSB.println("+++END+++");
 }
 
-void imucommand(const char *cmd) {
+void IMU::command(const char *cmd) {
     if (strcmp(cmd,"MON")==0)
 	imumonitor();
     else if (strncmp(cmd,"MAGSET",6)==0) {

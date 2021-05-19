@@ -31,7 +31,7 @@ void cmdexec(char *buf) {
   else if (buf[0] == 'G')
       gpsusercommand(buf+1);
   else if (buf[0]=='I')
-       imucommand(buf+1);
+       imu.command(buf+1);
   else if (buf[0]=='S')
        steppercommand(buf+1);
 #ifdef EXTERNALBLE
@@ -98,7 +98,7 @@ void statusReport(void) {
 	long lat, lon;   unsigned long age;
 	gps.get_position(&lat,&lon,&age);
 	sprintf(fmtbuf,"GPS: age:%d, nsat=%d",age/1000,gps.satellites()); debug(fmtbuf);
-	sprintf(fmtbuf,"a=[%d,%d,%d] heading=%.0f",acc_x,acc_y,acc_z,getHeading()); debug(fmtbuf);
+	sprintf(fmtbuf,"a=[%d,%d,%d] heading=%.0f",imu.acc_x,imu.acc_y,imu.acc_z,imu.getHeading()); debug(fmtbuf);
 	lastReport=millis();
     }
 }
@@ -120,7 +120,7 @@ void setup(void) {
   blesetup();
 #endif	
   
-  imusetup();
+  imu.setup();
   steppersetup();
   gpssetup();
   batterysetup();
@@ -132,7 +132,7 @@ void setup(void) {
   
   initTargets();
   
-  if (haveimu)
+  if (imu.haveimu)
       Scheduler.startLoop(imuloop,2048);
   Scheduler.startLoop(stepperloop,2048);
   Scheduler.startLoop(gpsloop);
