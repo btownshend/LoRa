@@ -225,10 +225,12 @@ void imuloop() {
     if (imu.dataReady()) {
 	// Got new data, save it
 	imu.update(UPDATE_ACCEL|UPDATE_GYRO|UPDATE_COMPASS);
-	// rawmag_x = imu.mx; rawmag_y = imu.mz; rawmag_z = -imu.my;  // Module is mounted on side
-	rawmag_x = imu.mx; rawmag_y = imu.my; rawmag_z = imu.mz;  // Normal orientation
-	gyro_x = imu.gx; gyro_y = imu.gy; gyro_z = imu.gz;  // Normal orientation
-	acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation
+	rawmag_x = imu.mx; rawmag_y = -imu.mz; rawmag_z = imu.my;  // Module is mounted on side (differently from gyro and acc)
+	//rawmag_x = imu.mx; rawmag_y = imu.my; rawmag_z = imu.mz;  // Normal orientation
+	gyro_x = imu.gy; gyro_y = imu.gz; gyro_z = imu.gx;  // Mounted on side
+	//gyro_x = imu.gx; gyro_y = imu.gy; gyro_z = imu.gz;  // Normal orientation
+	acc_x = imu.ay; acc_y = imu.az; acc_z = imu.ax;  // Mounted on side
+	//acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation
 	updateCalibration();  
 
 	acc_mag = sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y+1.0f*acc_z*acc_z)/2048;
