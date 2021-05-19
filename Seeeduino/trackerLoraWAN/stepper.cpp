@@ -14,7 +14,7 @@ AccelStepper stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2,PIN_STEPP
 int sensorVals[360];   // Sensor values for each angle
 int maxPos;  // Current angle with maximum sensor reading
 const int STEPSPERREV = 720;
-const int NORTHOFFSET = 0;   // Offset in steps from sensor-based zero to position with needle pointing north
+const int NORTHOFFSET = -5;   // Offset in steps from sensor-based zero to position with needle pointing north,, positive values rotate needle CCWt
 int spinning = 0;  // Number of rotations of needle to make
 
 #ifdef USEINTERRUPTS
@@ -52,6 +52,10 @@ void adjuststepper() {
     if (spinning>0) {
 	return;  // No adjustments while spinning
     }
+    if (!isstill())
+	// Unit accelerating, no update
+	return;
+    
     if (uiactive()) {
 	gotoangle(getuipos());
     } else {
@@ -68,7 +72,7 @@ void adjuststepper() {
 
 void steppersetup() {
     const int maxspeed=1200; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s
-    const int maxaccel=120;    // maxspeed/maxaccel gives time to reach full speed
+    const int maxaccel=1200;    // maxspeed/maxaccel gives time to reach full speed
     stepper.setMaxSpeed(maxspeed);  
     stepper.setAcceleration(maxaccel);   // Acceleration tuned for the right "look" (4000 step/s/s will get it up to vmax after rotating 90 deg, but seems to lose steps then)
     float tmax=maxspeed*1.0/maxaccel;
@@ -87,7 +91,7 @@ void dumpsensor(void) {
     for (int i=0;i<360;i++) {
 	SerialUSB.print(sensorVals[i]);
 	if (i==359)
-	    SerialUSB.println("];");
+	    SerialUSB.print("];");
 	else
 	    SerialUSB.print(",");
     }
@@ -95,12 +99,12 @@ void dumpsensor(void) {
 
 void sensorcheck() {
     // Check sensor
-    int sensor=analogRead(PIN_SENSOR);
-    int position=(stepper.currentPosition()/(STEPSPERREV/360))%360;
-    static int nfound=0;
-    
+
+    int position=((stepper.currentPosition()-NORTHOFFSET)/(STEPSPERREV/360))%360;
     while (position<0)
 	position+=360;
+
+    static int nfound=0;
     if (sensorVals[position]==-1) {
 	nfound++;
 	if (nfound%10==0) {
@@ -109,44 +113,49 @@ void sensorcheck() {
 	    SerialUSB.println(" positions");
 	}
     }
-    sensorVals[position]=sensor;
-    static int minSensor=9999;
-    if (sensor<minSensor)
-	minSensor=sensor;
+    sensorVals[position]=analogRead(PIN_SENSOR);
     if (spinning>0 && stepper.distanceToGo()<20)
 	stepper.move(20);
+    
     if (nfound==360) {
-	dumpsensor();
-	sprintf(fmtbuf,"min sensor=%d",minSensor);
-	SerialUSB.println(fmtbuf);
-	
+	if (spinning>0)
+	    spinning--;
+	unsigned long tic=millis();
 	// Find maximum weighted average in WINDOWSIZE window
 	int s=0,sx=0;
+	int peakoffset=0;
 	const int WINDOWSIZE=45;
 	for (int i=0;i<WINDOWSIZE;i++) {
-	    s+=(sensorVals[i]-minSensor);
-	    sx+=(sensorVals[i]-minSensor)*i;
+	    s+=sensorVals[i];
+	    sx+=sensorVals[i]*i;
 	}
-	int maxw=0, peakpos=0, peakloc=0;
+	int maxw=0, peakpos=0, peakloc=0, xsum=0;
 	for (int i=0;i<360;i++) {
-	    if (s>maxw) {
-		maxw=s;
-		peakpos=(sx/s)%360;
+	    int offset=(sensorVals[i]+sensorVals[(i+1)%360]+sensorVals[(i+WINDOWSIZE-1)%360]+sensorVals[(i+WINDOWSIZE)%360])/4; // Baseline assumed to be average of first and last point
+	    int sum=s-offset*WINDOWSIZE;
+	    if (sum>maxw) {
+		maxw=sum;
+		xsum=sx-offset*WINDOWSIZE*(i+(WINDOWSIZE-1)/2);
+		peakpos=(xsum/sum)%360;
 		peakloc=i;
+		peakoffset=offset;
 	    }
 	    s+=sensorVals[(i+WINDOWSIZE)%360]-sensorVals[i];
-	    sx+=(sensorVals[(i+WINDOWSIZE)%360]-minSensor)*(i+WINDOWSIZE)-(sensorVals[i]-minSensor)*i;
+	    sx+=(sensorVals[(i+WINDOWSIZE)%360])*(i+WINDOWSIZE)-sensorVals[i]*i;
 	}
 	if (peakpos>180)
 	    peakpos-=360;
-	sprintf(fmtbuf,"max=%d;sum=%d;range=%d;\nv=[v,struct('sensor',sensor,'max',max,'sum',sum,'range',range)];", peakpos,maxw,peakloc+1, peakloc+WINDOWSIZE);
+	dumpsensor();
+	sprintf(fmtbuf,"v=[v,struct('sensor',sensor,'peakpos',%d,'offset',%d,'area',%d,'xsum',%d,'range',%d:%d)];", peakpos,peakoffset,maxw,xsum,peakloc+1, peakloc+WINDOWSIZE);
 	SerialUSB.println(fmtbuf);
 	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360+NORTHOFFSET);
 	// Clear for another go
 	for (int i=0;i<360;i++) 
 	    sensorVals[i]=-1;   
 	nfound=0;
-	minSensor=9999;
+	unsigned long toc=millis();
+	sprintf(fmtbuf,"Analysis took %ld msec.",toc-tic);
+	SerialUSB.println(fmtbuf);
     }
 }
 

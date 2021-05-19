@@ -5,6 +5,7 @@
 enum  { UI_INACTIVE, UI_STARTING, UI_ACTIVE, UI_SELECTED } uimode;
 static unsigned long lastChange=0;
 static int selected = -1;
+const int spacing = 45;  // Angle between settings
 
 bool uiactive(void) {
     return uimode!=UI_INACTIVE;
@@ -12,18 +13,30 @@ bool uiactive(void) {
 
 // Get current setting position (8 setttings at 45deg intervals)
 int getuisetting(void) {
-	float rotation = -(int)(atan2(acc_y,acc_x)*57.3);
-	while (rotation<0)
-	    rotation+=360;
-	// Quantize to 45 deg so it clicks
-	int setting = (int((rotation+22.5)/45))%8;
-	return setting;
+    static int currsetting = 0;  // Keep a persistent value
+    // Can update if the device is still
+    int rotation = -(int)(atan2(orient_y,orient_x)*57.3);
+    while (rotation<0)
+	rotation+=360;
+    int rotdiff=(currsetting*spacing-rotation+360)%360;
+    if (rotdiff>40) { // Has some hysteresis
+	// Quantize to spacing deg so it clicks
+	int newsetting = (int((rotation+(spacing/2.0))/spacing))%8;
+	if (newsetting!=currsetting) {
+	    sprintf(fmtbuf,"UI setting %d -> %d (acc=[%d,%d,%d])", currsetting, newsetting,acc_x,acc_y,acc_z);
+	    SerialUSB.println(fmtbuf);
+	    currsetting=newsetting;
+	}
+    }
+    return currsetting;
 }
 
 // Register a tap in the UI with the device oriented with given tilt
 // Can also retrieve overall position (acc_*) from imu
 void uitap(float tilt) {
-    if (tilt>80 && tilt<110) {
+    sprintf(fmtbuf,"uitap(%f)",tilt);
+    SerialUSB.println(fmtbuf);
+    if (tilt>70 && tilt<110) {
 	if (uimode==UI_INACTIVE) {
 	    uimode=UI_STARTING;
 	    lastChange=millis();
@@ -33,8 +46,9 @@ void uitap(float tilt) {
 	    SerialUSB.print("UI: Selected ");
 	    SerialUSB.println(selected);
 	    uimode=UI_SELECTED;
+	    lastChange=millis();
 	}
-    } else if (uimode!=UI_INACTIVE) {
+    } else if (uimode!=UI_INACTIVE && tilt<45) {
 	SerialUSB.println("UI: Inactive");
 	uimode=UI_INACTIVE;
     } else {
@@ -50,14 +64,14 @@ int getuipos(void) {
 	SerialUSB.println("UI: Starting->Active");
 	uimode=UI_ACTIVE;
     }
-    if (uimode==UI_SELECTED && (millis()-lastChange > 1000)) {
+    if (uimode==UI_SELECTED && (millis()-lastChange > 2000)) {
 	SerialUSB.println("UI: Selected->Active");
 	uimode=UI_ACTIVE;
     }
     if (uimode==UI_STARTING) 
 	return (millis()-lastChange)*36/500;
     else if (uimode==UI_SELECTED)
-	return sin(6.28*(millis()-lastChange)/250)*22.5+selected*45;
+	return sin(6.28*(millis()-lastChange)/500)*(spacing/4.0)+selected*spacing;
     else {
 	return getuisetting()*45;
     }
