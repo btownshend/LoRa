@@ -17,7 +17,7 @@ short rawmag_x, rawmag_y, rawmag_z;  // As read from AK09918
 short mag_x, mag_y, mag_z;  // After low pass filtering and scaling
 float acc_mag;  // Total magnitude of acceleration
 float acc_external;  // External acceleration
-const float stillaccel = 0.1f;  // External acceleration less than this to be considered still
+const float stillaccel = 0.01f;  // External acceleration less than this to be considered still
 
 bool haveimu = false;
 typedef struct {
@@ -92,7 +92,7 @@ void imusetup() {
 	SerialUSB.println("Unable to setSampleRate()");
 	return;
     } 
-
+    
     // Likewise, the compass (magnetometer) sample rate can be
     // set using the setCompassSampleRate() function.
     // This value can range between: 1-100Hz
@@ -234,7 +234,9 @@ void imuloop() {
 	updateCalibration();  
 
 	acc_mag = sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y+1.0f*acc_z*acc_z)/2048;
-	acc_external = fabs(acc_mag-1);
+	static float meanmag=1.0f;
+	meanmag=meanmag*0.999+acc_mag*.001;
+	acc_external = fabs(acc_mag-meanmag);
 
 	if (isstill()) {
 	    orient_x=acc_x;orient_y=acc_y;orient_z=acc_z;
@@ -243,7 +245,7 @@ void imuloop() {
 	static unsigned long lastdbg = 0;
 	if (millis() - lastdbg > 10000 ) {
 	    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
-	    sprintf(fmtbuf, "a=[%d,%d,%d]; g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field);
+	    sprintf(fmtbuf, "a=[%d,%d,%d] (mean:%.2f); g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f, raw=[%d,%d,%d]", acc_x, acc_y, acc_z, meanmag, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field,rawmag_x,rawmag_y,rawmag_z);
 	    SerialUSB.print(fmtbuf);
 	    imu.computeEulerAngles(true);
 	    sprintf(fmtbuf, ", Roll: %.0f, Pitch: %.0f, Yaw: %.0f, Heading: %.0f, Tilt: %.0f", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
