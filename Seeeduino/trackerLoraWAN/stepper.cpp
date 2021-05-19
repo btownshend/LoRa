@@ -15,6 +15,7 @@ int sensorVals[360];   // Sensor values for each angle
 int maxPos;  // Current angle with maximum sensor reading
 const int STEPSPERREV = 720;
 const int NORTHOFFSET = 0;   // Offset in steps from sensor-based zero to position with needle pointing north
+int spinning = 0;  // Number of rotations of needle to make
 
 #ifdef USEINTERRUPTS
 SAMDTimer ITimer0(TIMER_TC3);
@@ -48,6 +49,9 @@ void gotoangle(float angle) {
 }
 
 void adjuststepper() {
+    if (spinning>0) {
+	return;  // No adjustments while spinning
+    }
     if (uiactive()) {
 	gotoangle(getuipos());
     } else {
@@ -109,6 +113,8 @@ void sensorcheck() {
     static int minSensor=9999;
     if (sensor<minSensor)
 	minSensor=sensor;
+    if (spinning>0 && stepper.distanceToGo()<20)
+	stepper.move(20);
     if (nfound==360) {
 	dumpsensor();
 	sprintf(fmtbuf,"min sensor=%d",minSensor);
@@ -161,6 +167,12 @@ void stepperloop() {
 }
 
 void steppercommand(const char *cmd) {
-    if (cmd[0]=='d')
+    if (cmd[0]=='d' || cmd[0]=='D') {
 	dumpsensor();
+	SerialUSB.println("");
+    } else if (cmd[0]=='s' || cmd[0]=='S') {
+	spinning=2;
+	SerialUSB.println("Spinning");
+	stepper.move(STEPSPERREV/360);
+    }
 }
