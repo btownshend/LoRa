@@ -81,8 +81,7 @@ bool setDR() {
     else if (tgtDR > maxDR)
 	tgtDR = maxDR;
     if (tgtDR != currentDR) {
-	sprintf(fmtbuf, "pendingLCR=%d, margin=%d: changing DR from %d to %d", pendingLCR, gwmargin, currentDR, tgtDR);
-	SerialUSB.println(fmtbuf);
+	Log.notice( "pendingLCR=%d, margin=%d: changing DR from %d to %d\n", pendingLCR, gwmargin, currentDR, tgtDR);
 	currentDR = tgtDR;
 	sprintf(fmtbuf, "AT+DR=DR%d", currentDR);
 	lorawrite(fmtbuf);
@@ -95,7 +94,7 @@ void join() {
     // while (!lora.setOTAAJoin(JOIN));
     lorawrite("AT+JOIN");
     // TODO: Should verify response
-    SerialUSB.println("Join request initiated");
+    Log.notice("Join request initiated\n");
 }
 
 void loraread() {
@@ -107,8 +106,7 @@ void loraread() {
 	char c = SerialLoRa.read();
 	if (c == '\r') {
 	    lorabuf[lorabuflen] = 0;
-	    SerialUSB.print("<LORA: ");
-	    SerialUSB.println(lorabuf);
+	    Log.trace("<LORA: %s\n",lorabuf);
 #ifdef LORATOBLE
 	    if (bleconnected) {
 		SerialBLE.print("<LORA: ");
@@ -129,20 +127,19 @@ bool islorabusy() {
 void lorawrite(const char *str) {
     // Send null terminated string to LoRa module
     if (msgsending) {
-	SerialUSB.println("*** lorawrite while msgsending is true; clearing");
+	Log.warning("*** lorawrite while msgsending is true; clearing\n");
 	msgsending = false;
     }
 
     while (islorabusy()) {
-	SerialUSB.println("*** Lora busy with prior command, delaying");
+	Log.warning("*** Lora busy with prior command, delaying\n");
 	loraread();
 	delay(1);
     }
     SerialLoRa.println(str);
     lorabusy = millis();
 
-    SerialUSB.print(">LORA: ");
-    SerialUSB.println(str);
+    Log.trace(">LORA: %s\n",str);
 #ifdef LORATOBLE
     if (bleconnected) {
 	SerialBLE.print(">LORA: ");
@@ -173,7 +170,7 @@ void loramsg(int n, unsigned char data[]) {
 	delay(1);   // At 115,200 baud, 10 chars would take ~1ms
     }
     if (msgsending) {
-	SerialUSB.println("*** Timeout while sending message");
+	Log.error("*** Timeout while sending message\n");
 	msgsending=false;
     }
 }
@@ -194,13 +191,10 @@ void send() {
 	unsigned long chars;
 	unsigned short sentences, failed_cs;
 	gps.stats(&chars, &sentences, &failed_cs);
-	sprintf(fmtbuf, "No new GPS data;  age=%ld, chars=%ld, sentences=%d, failed_cs=%d", age, chars, sentences, failed_cs);
-	SerialUSB.println(fmtbuf);
+	Log.notice( "No new GPS data;  age=%ld, chars=%ld, sentences=%d, failed_cs=%d\n", age, chars, sentences, failed_cs);
     } else {
-	SerialUSB.println("Got GPS data");
+	Log.trace("Got GPS data\n");
 	long alt = gps.altitude();  // Altitude in cm
-	SerialUSB.print("Altitude:");
-	SerialUSB.println(alt, DEC);
 	if (alt == gps.GPS_INVALID_ALTITUDE)
 	    alt = 0xffffffff;
 
@@ -286,12 +280,11 @@ void send() {
     int sendStart = millis();
     loramsg(dptr - data, data);
     lastSend = millis();
-    SerialUSB.print("Send took "); Serial.print(lastSend - sendStart); Serial.println(" msec");
+    Log.trace("Send took %d msec\n", lastSend - sendStart);
 }
 
 void processMessage(int n, unsigned char *data) {
-    sprintf(fmtbuf, "processMessage(%d,0x%02x...)", n, data[0]);
-    SerialUSB.println(fmtbuf);
+    Log.notice("processMessage(%d,0x%02x...)\n", n, data[0]);
 }
 
 void processLoRa(char *buf) {
@@ -302,14 +295,12 @@ void processLoRa(char *buf) {
 	int len, rssi, snr;
 	int ns = sscanf(buf, "+TEST: LEN:%d, RSSI:%d, SNR:%d", &len, &rssi, &snr);
 	if (ns != 3)
-	    SerialUSB.println("*** Failed Len scan");
+	    Log.error("*** Failed Len scan\n");
 	else {
-	    sprintf(fmtbuf, "Len=%d, RSSI=%d, SNR=%d", len, rssi, snr);
-	    SerialUSB.println(fmtbuf);
+	    Log.notice("Len=%d, RSSI=%d, SNR=%d\n", len, rssi, snr);
 	}
     } else if (strncmp(buf, "+MSGHEX: PORT: 1; RX: \"", 23) == 0) {
 	char *ptr = &buf[23];
-	SerialUSB.println(*ptr, DEC);
 	static unsigned char data[100];
 	unsigned int n = 0;
 	for (; n < sizeof(data) && *ptr != '"' && *ptr && ptr[1]; n++, ptr += 2) {
@@ -326,42 +317,37 @@ void processLoRa(char *buf) {
 	;  // Ignore
     } else if (strncmp(buf, "+LW: LEN", 8) == 0) {
 	maxmsglen = atoi(&buf[9]);
-	SerialUSB.print("Max message length: ");
-	SerialUSB.println(maxmsglen);
+	Log.notice("Max message length: %d\n",maxmsglen);
     } else if (strcmp(buf, "+MSGHEX: FPENDING") == 0) {
-	SerialUSB.println("Incoming message");
+	Log.notice("Incoming message\n");
     } else if (strncmp(buf, "+MSGHEX: RXWIN", 14) == 0) {
 	int nm=sscanf(buf,"+MSGHEX: RXWIN1, RSSI %d, SNR %f",&lastRSSI,&lastSNR);
 	lastReceived=millis();
-	SerialUSB.println(&buf[14]);  // +MSGHEX: RXWIN1, RSSI -49, SNR 6.8
 	if (nm!=2)
-	    SerialUSB.println("Failed parse");
+	    Log.error("Failed parse of %s\n",buf);
     } else if (strcmp(buf, "+MSGHEX: Please join network first") == 0) {
-	SerialUSB.println("*** Not joined");
+	Log.warning("*** Not joined\n");
 	join();
     } else if (strcmp(buf, "+MSGHEX: Done") == 0) {
 	if (!msgsending)
-	    SerialUSB.println("*** MSGHEX done when msgsending was false");
+	    Log.error("*** MSGHEX done when msgsending was false\n");
 	msgsending = false;
     } else if (strncmp(buf, "+MSGHEX: Length error", 21) == 0) {
-	SerialUSB.print("*** Length error");
 	msgsending = false;
 	maxmsglen = atoi(&buf[22]); // Probably due to DR0 fallback
-	SerialUSB.print("Max message length: ");
-	SerialUSB.println(maxmsglen);
+	Log.warning("*** Length error, max message length: %d\n",maxmsglen);
     } else if (strncmp(buf, "+MSGHEX: Link ", 14) == 0) { // e.g. +MSGHEX: Link 21, 1
 	int gwcnt;
 	int nr=sscanf(buf, "+MSGHEX: Link %d, %d",&gwmargin, &gwcnt);
 	if (nr!=2)
-	    SerialUSB.println("Failed Link parse");
+	    Log.error("Failed Link parse: %s\n",buf);
 	else {
-	    SerialUSB.print("Link margin: ");
-	    SerialUSB.println(gwmargin);
+	    Log.notice("Link margin: %d\n");
 	}
 	pendingLCR=0;  // Clear the pending LCR
 	lastLCR = millis();
     } else if (strncmp(buf, "+MSGHEX: No free channel", 24) == 0) {
-	SerialUSB.println("*** No free channel");
+	Log.warning("*** No free channel\n");
 	msgsending = false;
     } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
 	;  // Ignore
@@ -372,8 +358,7 @@ void processLoRa(char *buf) {
     } else if (strncmp(buf, "+DR: ",5) == 0) {
 	;  // Ignore
     } else {
-	SerialUSB.print("*** Unparsed message: ");
-	SerialUSB.println(buf);
+	Log.warning("*** Unparsed message: %s\n",buf);
     }
 }
 
@@ -382,9 +367,9 @@ static char usercmd[100]="";
 void lorawanusercommand(const char *line) {
     // Command from serial port
     if (usercmd[0] != '\0')
-	SerialUSB.println("*** Overrun of usercmd buf");
+	Log.error("*** Overrun of usercmd buf\n");
     if (strlen(line) >= sizeof(usercmd)) {
-	SerialUSB.println("*** User command too long");
+	Log.error("*** User command too long\n");
 	return;
     }
     strcpy(usercmd,line);

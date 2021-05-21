@@ -34,8 +34,7 @@ int getuisetting(void) {
 // Register a tap in the UI with the device oriented with given tilt
 // Can also retrieve overall position (acc_*) from imu
 void uitap(float tilt) {
-    sprintf(fmtbuf,"uitap(%f)",tilt);
-    SerialUSB.println(fmtbuf);
+    Log.notice("uitap(%f)\n",tilt);
     if (tilt>70 && tilt<110) {
 	if (uimode==UI_INACTIVE) {
 	    uimode=UI_STARTING;

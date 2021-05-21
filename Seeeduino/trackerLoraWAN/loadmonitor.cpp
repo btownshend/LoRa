@@ -8,8 +8,7 @@ void loadmonitorloop(void) {
 
     unsigned int interval=(unsigned int)(now-lasttime);
     if (interval>10000) {
-	SerialUSB.print("Loop: ");
-	SerialUSB.println(interval);
+	Log.notice("Long thread loop: %d msec\n",interval);
     }
     
     if (interval<mintime)
@@ -19,8 +18,7 @@ void loadmonitorloop(void) {
     samples++;
     if (now-avgstart > 5000000) {
 	float load = (now-avgstart-mintime*samples)*100/(now-avgstart);
-	sprintf(fmtbuf,"Loop: min=%d,max=%d,avg=%ld usec -> %.0f%%", mintime, maxtime, (now-avgstart)/samples,load);
-	SerialUSB.println(fmtbuf);
+	Log.notice("Loop: min=%d,max=%d,avg=%ld usec -> %f%%\n", mintime, maxtime, (now-avgstart)/samples,load);
 	samples=0;
 	avgstart=now;
 	mintime=99999;

@@ -13,8 +13,7 @@ unsigned short batteryvoltage() {
   unsigned short battery = (analogRead(pin_battery_voltage) * 3300 * 11) >> 10;
   pinMode(pin_battery_status , INPUT);
 
-  SerialUSB.print("Battery: ");
-  SerialUSB.println(battery);
+  Log.notice("Battery: %d\n",battery);
   return battery;
 }
 

@@ -21,11 +21,7 @@ void SERCOM2_Handler() {
 char fmtbuf[200]; // Space to build formatted strings
 
 void cmdexec(char *buf) {
-  SerialUSB.print("Exec: ");
-  SerialUSB.print(buf);
-  SerialUSB.print("[");
-  SerialUSB.print(strlen(buf));
-  SerialUSB.println("]");
+    Log.notice("Exec: %s\n", buf);
   if (buf[0] == 'L')
       lorawanusercommand(buf+1);
   else if (buf[0] == 'G')
@@ -63,28 +59,23 @@ void cmdread(void) {
 unsigned int stackcheck(const char *module, unsigned int minstack) {
     // Check amount of stack space remaining
     if (Scheduler.stack() < minstack) {
-	SerialUSB.print(module);
-	SerialUSB.print(": stack decreased from ");
-	SerialUSB.print(minstack);
-	SerialUSB.print(" to ");
-	SerialUSB.println(Scheduler.stack());
+        Log.warning("%s: stack decreased from %d to %d\n",module,minstack,Scheduler.stack());
 	minstack=Scheduler.stack();
     }
     if (minstack<100) {
 	// Serious problem
-	SerialUSB.print(module);
-	SerialUSB.print(" stack overrun: ");
-	SerialUSB.print(minstack);
-	SerialUSB.println("remaining");
+	Log.error("%s: stack overrun: %d remaining\n",module, minstack);
     }
     return minstack;
 }
 
-void debug(const char *line) {
+void statusLine(const char *line) {
+    SerialUSB.print("** ");
     SerialUSB.println(line);
 #ifdef EXTERNALBLE
-    if (bleconnected)
+    if (bleconnected) {
 	SerialBLE.println(line);
+    }
 #endif
 }
 
@@ -92,13 +83,17 @@ void statusReport(void) {
     // Generate a status report at regular intervals
     static unsigned long lastReport=0;
     if (millis() - lastReport > 10000) {
-	sprintf(fmtbuf,"------ %d/%d/%d %02d:%02d:%02d",month(),day(),year(),hour(),minute(),second()); debug(fmtbuf);
-	sprintf(fmtbuf,"DR%d, margin=%d, LCR=%d (%d sec);  RSSI=%d, SNR=%.1f (%d sec)",currentDR, gwmargin, pendingLCR, (millis()-lastLCR)/1000,lastRSSI,lastSNR,(millis()-lastReceived)/1000);debug(fmtbuf);
-	sprintf(fmtbuf,"Target %d: dist=%.0fm, heading=%.0f, age=%d", currentTarget, targets[currentTarget].getDistance(), targets[currentTarget].getHeading(),targets[currentTarget].getAge()); debug(fmtbuf);
+#ifdef EXTERNALBLE
+	if (bleconnected)
+	    SerialBLE.println("--------------------");
+#endif
+	sprintf(fmtbuf,"%d/%d/%d %02d:%02d:%02d",month(),day(),year(),hour(),minute(),second()); statusLine(fmtbuf);
+	sprintf(fmtbuf,"DR%d, margin=%d, LCR=%d (%d sec);  RSSI=%d, SNR=%.1f (%d sec)",currentDR, gwmargin, pendingLCR, (millis()-lastLCR)/1000,lastRSSI,lastSNR,(millis()-lastReceived)/1000);statusLine(fmtbuf);
+	sprintf(fmtbuf,"Target %d: dist=%.0fm, heading=%.0f, age=%d", currentTarget, targets[currentTarget].getDistance(), targets[currentTarget].getHeading(),targets[currentTarget].getAge()); statusLine(fmtbuf);
 	long lat, lon;   unsigned long age;
 	gps.get_position(&lat,&lon,&age);
-	sprintf(fmtbuf,"GPS: age:%d, nsat=%d",age/1000,gps.satellites()); debug(fmtbuf);
-	sprintf(fmtbuf,"a=[%d,%d,%d] heading=%.0f",imu.acc_x,imu.acc_y,imu.acc_z,imu.getHeading()); debug(fmtbuf);
+	sprintf(fmtbuf,"GPS: age:%d, nsat=%d",age/1000,gps.satellites()); statusLine(fmtbuf);
+	sprintf(fmtbuf,"a=[%d,%d,%d] heading=%.0f",imu.acc_x,imu.acc_y,imu.acc_z,imu.getHeading()); statusLine(fmtbuf);
 	lastReport=millis();
     }
 }
@@ -109,14 +104,17 @@ void setup(void) {
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
 
+  //  Log.begin(LOG_LEVEL_VERBOSE, &SerialUSB,true);
+  Log.begin(LOG_LEVEL_NOTICE, &SerialUSB,true);
+  Log.notice("Logging on");
 #ifdef EXTERNALGPS
-  SerialUSB.println("External GPS");
+  Log.notice("External GPS");
 #endif
 #ifdef EXTERNALLORA
-  SerialUSB.println("External LoRa");
+  Log.notice("External LoRa");
 #endif
 #ifdef EXTERNALBLE
-  SerialUSB.println("External BLE");
+  Log.notice("External BLE");
   blesetup();
 #endif	
   

@@ -25,9 +25,9 @@ void Needle::setuptimer(void)
 {
   // Interval in microsecs
   if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_US, TimerHandler0))
-    Serial.println("Starting  ITimer0 OK, millis() = " + String(millis()));
+      Log.notice("Starting  ITimer0 OK, millis() = %d\n",millis());
   else
-    Serial.println("Can't set ITimer0. Select another freq. or timer");
+      Log.error("Can't set ITimer0. Select another freq. or timer\n");
 }
 #endif  // USEINTERRUPTS
 
@@ -44,7 +44,7 @@ void Needle::enable(void) {
 	return;
     enabled=true;
     // stepper.enableOutputs(); // Executing the steps will turn on the outputs without changing them to a possible incorrect value
-    SerialUSB.print("+");
+    //    SerialUSB.print("+");
 }
 
 void Needle::disable(void) {
@@ -53,7 +53,7 @@ void Needle::disable(void) {
     enabled=false;
     stepper.disableOutputs();
     lastenabled=millis();
-    SerialUSB.print("-");
+    // SerialUSB.print("-");
 }
 
 int Needle::timesinceactive(void) { // How long has it been disabled
@@ -116,8 +116,7 @@ void Needle::setup(void) {
     stepper.setAcceleration(maxaccel);   // Acceleration tuned for the right "look" (4000 step/s/s will get it up to vmax after rotating 90 deg, but seems to lose steps then)
     float tmax=maxspeed*1.0/maxaccel;
     float degmax=maxaccel*tmax*tmax/2/2;
-    sprintf(fmtbuf,"Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation", maxspeed/2, tmax, degmax);
-    SerialUSB.println(fmtbuf);
+    Log.notice("Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation\n", maxspeed/2, tmax, degmax);
 #ifdef USEINTERRUPTS
     setuptimer();
 #endif
@@ -145,9 +144,7 @@ void Needle::sensorcheck(void) {
     if (sensorVals[position]==-1) {
 	nfound++;
 	if (nfound%10==0) {
-	    SerialUSB.print("Sensed ");
-	    SerialUSB.print(nfound);
-	    SerialUSB.println(" positions");
+	    Log.verbose("Sensed %d positions\n",nfound);
 	}
     }
     sensorVals[position]=analogRead(PIN_SENSOR);
@@ -185,8 +182,8 @@ void Needle::sensorcheck(void) {
 	dumpsensor();
 	sprintf(fmtbuf,"v=[v,struct('sensor',sensor,'peakpos',%d,'offset',%d,'area',%d,'xsum',%d,'range',%d:%d)];", peakpos,peakoffset,maxw,xsum,peakloc+1, peakloc+WINDOWSIZE);
 	SerialUSB.println(fmtbuf);
-	sprintf(fmtbuf,"**** PEAK SHIFT: %d",peakpos);
-	SerialUSB.println(fmtbuf);
+	if (abs(peakpos)>5)
+	    Log.warning("**** PEAK SHIFT: %d\n",peakpos);
 	
 	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360+NORTHOFFSET);
 	// Clear for another go
@@ -194,15 +191,13 @@ void Needle::sensorcheck(void) {
 	    sensorVals[i]=-1;   
 	nfound=0;
 	unsigned long toc=millis();
-	sprintf(fmtbuf,"Analysis took %ld msec.",toc-tic);
-	SerialUSB.println(fmtbuf);
+	Log.verbose("Analysis took %ld msec\n",toc-tic);
     }
 }
 
 
 void Needle::loop(void) {
     // If we have a new value, adjust stepper
-    //SerialUSB.println("stepperloop");
     adjuststepper();
     if (enabled && !stepper.isRunning()) {
 	disable();
@@ -212,7 +207,6 @@ void Needle::loop(void) {
 #endif
     sensorcheck();
     
-    //SerialUSB.println("stepperloop end");
     // Check stack
     static int minstack=100000; minstack=stackcheck("Stepper",minstack);
     yield();
@@ -296,6 +290,6 @@ void Needle::command(const char *cmd) {
 	SerialUSB.println("Field measurement");
 	stepperfield();
     } else {
-	SerialUSB.println("Expected ND, NS, or NF");
+	Log.warning("Expected ND, NS, or NF");
     }
 }
