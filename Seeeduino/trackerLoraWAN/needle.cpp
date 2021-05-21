@@ -14,14 +14,14 @@ Needle needle;
 #ifdef USEINTERRUPTS
 SAMDTimer ITimer0(TIMER_TC3);
 
-void TimerHandler0(void)
+void Needle::TimerHandler0(void)
 {
   // Doing something here inside ISR
     needle.run();
 }
 
 #define TIMER0_INTERVAL_US     100
-void setuptimer()
+void Needle::setuptimer(void)
 {
   // Interval in microsecs
   if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_US, TimerHandler0))
@@ -31,8 +31,45 @@ void setuptimer()
 }
 #endif  // USEINTERRUPTS
 
-Needle::Needle(void):  stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2,PIN_STEPPER3,PIN_STEPPER4) {
-    ;
+Needle::Needle(void):  stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2,PIN_STEPPER3,PIN_STEPPER4,true) {
+    spinning=0;
+    fieldtesting=false;
+    enabled=true; // To match stepper state
+    for (int i=0;i<360;i++)
+	sensorVals[i]=-1;
+}
+
+void Needle::enable(void) {
+    if (enabled)
+	return;
+    enabled=true;
+    // stepper.enableOutputs(); // Executing the steps will turn on the outputs without changing them to a possible incorrect value
+    SerialUSB.print("+");
+}
+
+void Needle::disable(void) {
+    if (!enabled)
+	return;
+    enabled=false;
+    stepper.disableOutputs();
+    lastenabled=millis();
+    SerialUSB.print("-");
+}
+
+int Needle::timesinceactive(void) { // How long has it been disabled
+    if (enabled)
+	return 0;
+    return millis()-lastenabled;
+}
+
+void Needle::move(long relative) {
+    enable();
+    stepper.move(relative);
+}
+
+void Needle::moveTo(long absolute) {
+    enable();
+    stepper.moveTo(absolute);
 }
 
 void Needle::gotoangle(float angle) {
@@ -43,11 +80,11 @@ void Needle::gotoangle(float angle) {
     //sprintf(fmtbuf,"cur=%d, new=%d, change=%d",curpos, newpos, change);
     //Serial.println(fmtbuf);
     if (abs(change)>(stepper.isRunning()?0:4))  // Only start it moving is the required change is significant
-	stepper.moveTo(curpos + change);
+	moveTo(curpos + change);
 }
 
 void Needle::stepperadvance(void) { // Move ahead one step
-    stepper.move(1);
+    move(1);
 }
 
 void Needle::adjuststepper(void) {
@@ -81,8 +118,6 @@ void Needle::setup(void) {
     float degmax=maxaccel*tmax*tmax/2/2;
     sprintf(fmtbuf,"Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation", maxspeed/2, tmax, degmax);
     SerialUSB.println(fmtbuf);
-    for (int i=0;i<360;i++)
-	sensorVals[i]=-1;
 #ifdef USEINTERRUPTS
     setuptimer();
 #endif
@@ -117,7 +152,7 @@ void Needle::sensorcheck(void) {
     }
     sensorVals[position]=analogRead(PIN_SENSOR);
     if (spinning>0 && stepper.distanceToGo()<20)
-	stepper.move(20);
+	move(20);
     
     if (nfound==360) {
 	if (spinning>0)
@@ -150,6 +185,9 @@ void Needle::sensorcheck(void) {
 	dumpsensor();
 	sprintf(fmtbuf,"v=[v,struct('sensor',sensor,'peakpos',%d,'offset',%d,'area',%d,'xsum',%d,'range',%d:%d)];", peakpos,peakoffset,maxw,xsum,peakloc+1, peakloc+WINDOWSIZE);
 	SerialUSB.println(fmtbuf);
+	sprintf(fmtbuf,"**** PEAK SHIFT: %d",peakpos);
+	SerialUSB.println(fmtbuf);
+	
 	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360+NORTHOFFSET);
 	// Clear for another go
 	for (int i=0;i<360;i++) 
@@ -166,8 +204,11 @@ void Needle::loop(void) {
     // If we have a new value, adjust stepper
     //SerialUSB.println("stepperloop");
     adjuststepper();
+    if (enabled && !stepper.isRunning()) {
+	disable();
+    }
 #ifndef USEINTERRUPTS
-    stepper.run();
+    stepper.run();  // If not using interrupts the last step may not be executed since the stepper will be disabled below too soon
 #endif
     sensorcheck();
     
@@ -180,7 +221,7 @@ void Needle::loop(void) {
 // Measure effect of stepper on IMU magnetometer
 void Needle::stepperfield(void) {
     fieldtesting=true;
-    stepper.moveTo(0);
+    moveTo(0);
     while (stepper.isRunning());  // wait until moved
     int sx[4],sy[4],sz[4],sx2[4],sy2[4],sz2[4];
     for (int phase=0;phase<4;phase++) { // Phases
@@ -205,7 +246,7 @@ void Needle::stepperfield(void) {
 	    sx2[phase]+=imu.rawmag_x*imu.rawmag_x;
 	    sy2[phase]+=imu.rawmag_y*imu.rawmag_y;
 	    sz2[phase]+=imu.rawmag_z*imu.rawmag_z;
-	    stepper.move(1);   // Advance to next phase
+	    move(1);   // Advance to next phase
 	    //while (stepper.isRunning()); // wait until moved
 	}
     }
@@ -250,9 +291,11 @@ void Needle::command(const char *cmd) {
     } else if (cmd[0]=='s' || cmd[0]=='S') {
 	spinning=2;
 	SerialUSB.println("Spinning");
-	stepper.move(STEPSPERREV/360);
+	move(STEPSPERREV/360);
     } else if (cmd[0]=='f' || cmd[0]=='F') {
 	SerialUSB.println("Field measurement");
 	stepperfield();
+    } else {
+	SerialUSB.println("Expected ND, NS, or NF");
     }
 }
