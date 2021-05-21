@@ -81,7 +81,7 @@ bool setDR() {
     else if (tgtDR > maxDR)
 	tgtDR = maxDR;
     if (tgtDR != currentDR) {
-	Log.notice( "pendingLCR=%d, margin=%d: changing DR from %d to %d\n", pendingLCR, gwmargin, currentDR, tgtDR);
+	notice( "pendingLCR=%d, margin=%d: changing DR from %d to %d\n", pendingLCR, gwmargin, currentDR, tgtDR);
 	currentDR = tgtDR;
 	sprintf(fmtbuf, "AT+DR=DR%d", currentDR);
 	lorawrite(fmtbuf);
@@ -94,7 +94,7 @@ void join() {
     // while (!lora.setOTAAJoin(JOIN));
     lorawrite("AT+JOIN");
     // TODO: Should verify response
-    Log.notice("Join request initiated\n");
+    notice("Join request initiated\n");
 }
 
 void loraread() {
@@ -106,7 +106,7 @@ void loraread() {
 	char c = SerialLoRa.read();
 	if (c == '\r') {
 	    lorabuf[lorabuflen] = 0;
-	    Log.trace("<LORA: %s\n",lorabuf);
+	    trace("<LORA: %s\n",lorabuf);
 #ifdef LORATOBLE
 	    if (bleconnected) {
 		SerialBLE.print("<LORA: ");
@@ -127,19 +127,19 @@ bool islorabusy() {
 void lorawrite(const char *str) {
     // Send null terminated string to LoRa module
     if (msgsending) {
-	Log.warning("*** lorawrite while msgsending is true; clearing\n");
+	warning("*** lorawrite while msgsending is true; clearing\n");
 	msgsending = false;
     }
 
     while (islorabusy()) {
-	Log.warning("*** Lora busy with prior command, delaying\n");
+	warning("*** Lora busy with prior command, delaying\n");
 	loraread();
 	delay(1);
     }
     SerialLoRa.println(str);
     lorabusy = millis();
 
-    Log.trace(">LORA: %s\n",str);
+    trace(">LORA: %s\n",str);
 #ifdef LORATOBLE
     if (bleconnected) {
 	SerialBLE.print(">LORA: ");
@@ -170,7 +170,7 @@ void loramsg(int n, unsigned char data[]) {
 	delay(1);   // At 115,200 baud, 10 chars would take ~1ms
     }
     if (msgsending) {
-	Log.error("*** Timeout while sending message\n");
+	error("*** Timeout while sending message\n");
 	msgsending=false;
     }
 }
@@ -191,9 +191,9 @@ void send() {
 	unsigned long chars;
 	unsigned short sentences, failed_cs;
 	gps.stats(&chars, &sentences, &failed_cs);
-	Log.notice( "No new GPS data;  age=%ld, chars=%ld, sentences=%d, failed_cs=%d\n", age, chars, sentences, failed_cs);
+	notice( "No new GPS data;  age=%ld, chars=%ld, sentences=%d, failed_cs=%d\n", age, chars, sentences, failed_cs);
     } else {
-	Log.trace("Got GPS data\n");
+	trace("Got GPS data\n");
 	long alt = gps.altitude();  // Altitude in cm
 	if (alt == gps.GPS_INVALID_ALTITUDE)
 	    alt = 0xffffffff;
@@ -280,11 +280,11 @@ void send() {
     int sendStart = millis();
     loramsg(dptr - data, data);
     lastSend = millis();
-    Log.trace("Send took %d msec\n", lastSend - sendStart);
+    trace("Send took %d msec\n", lastSend - sendStart);
 }
 
 void processMessage(int n, unsigned char *data) {
-    Log.notice("processMessage(%d,0x%02x...)\n", n, data[0]);
+    notice("processMessage(%d,0x%02x...)\n", n, data[0]);
 }
 
 void processLoRa(char *buf) {
@@ -295,9 +295,9 @@ void processLoRa(char *buf) {
 	int len, rssi, snr;
 	int ns = sscanf(buf, "+TEST: LEN:%d, RSSI:%d, SNR:%d", &len, &rssi, &snr);
 	if (ns != 3)
-	    Log.error("*** Failed Len scan\n");
+	    error("*** Failed Len scan\n");
 	else {
-	    Log.notice("Len=%d, RSSI=%d, SNR=%d\n", len, rssi, snr);
+	    notice("Len=%d, RSSI=%d, SNR=%d\n", len, rssi, snr);
 	}
     } else if (strncmp(buf, "+MSGHEX: PORT: 1; RX: \"", 23) == 0) {
 	char *ptr = &buf[23];
@@ -317,37 +317,37 @@ void processLoRa(char *buf) {
 	;  // Ignore
     } else if (strncmp(buf, "+LW: LEN", 8) == 0) {
 	maxmsglen = atoi(&buf[9]);
-	Log.notice("Max message length: %d\n",maxmsglen);
+	notice("Max message length: %d\n",maxmsglen);
     } else if (strcmp(buf, "+MSGHEX: FPENDING") == 0) {
-	Log.notice("Incoming message\n");
+	notice("Incoming message\n");
     } else if (strncmp(buf, "+MSGHEX: RXWIN", 14) == 0) {
 	int nm=sscanf(buf,"+MSGHEX: RXWIN1, RSSI %d, SNR %f",&lastRSSI,&lastSNR);
 	lastReceived=millis();
 	if (nm!=2)
-	    Log.error("Failed parse of %s\n",buf);
+	    error("Failed parse of %s\n",buf);
     } else if (strcmp(buf, "+MSGHEX: Please join network first") == 0) {
-	Log.warning("*** Not joined\n");
+	warning("*** Not joined\n");
 	join();
     } else if (strcmp(buf, "+MSGHEX: Done") == 0) {
 	if (!msgsending)
-	    Log.error("*** MSGHEX done when msgsending was false\n");
+	    error("*** MSGHEX done when msgsending was false\n");
 	msgsending = false;
     } else if (strncmp(buf, "+MSGHEX: Length error", 21) == 0) {
 	msgsending = false;
 	maxmsglen = atoi(&buf[22]); // Probably due to DR0 fallback
-	Log.warning("*** Length error, max message length: %d\n",maxmsglen);
+	warning("*** Length error, max message length: %d\n",maxmsglen);
     } else if (strncmp(buf, "+MSGHEX: Link ", 14) == 0) { // e.g. +MSGHEX: Link 21, 1
 	int gwcnt;
 	int nr=sscanf(buf, "+MSGHEX: Link %d, %d",&gwmargin, &gwcnt);
 	if (nr!=2)
-	    Log.error("Failed Link parse: %s\n",buf);
+	    error("Failed Link parse: %s\n",buf);
 	else {
-	    Log.notice("Link margin: %d\n");
+	    notice("Link margin: %d\n");
 	}
 	pendingLCR=0;  // Clear the pending LCR
 	lastLCR = millis();
     } else if (strncmp(buf, "+MSGHEX: No free channel", 24) == 0) {
-	Log.warning("*** No free channel\n");
+	warning("*** No free channel\n");
 	msgsending = false;
     } else if (strncmp(buf, "+MSGHEX", 7) == 0) {
 	;  // Ignore
@@ -358,7 +358,7 @@ void processLoRa(char *buf) {
     } else if (strncmp(buf, "+DR: ",5) == 0) {
 	;  // Ignore
     } else {
-	Log.warning("*** Unparsed message: %s\n",buf);
+	warning("*** Unparsed message: %s\n",buf);
     }
 }
 
@@ -367,9 +367,9 @@ static char usercmd[100]="";
 void lorawanusercommand(const char *line) {
     // Command from serial port
     if (usercmd[0] != '\0')
-	Log.error("*** Overrun of usercmd buf\n");
+	error("*** Overrun of usercmd buf\n");
     if (strlen(line) >= sizeof(usercmd)) {
-	Log.error("*** User command too long\n");
+	error("*** User command too long\n");
 	return;
     }
     strcpy(usercmd,line);

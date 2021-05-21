@@ -25,9 +25,9 @@ void Needle::setuptimer(void)
 {
   // Interval in microsecs
   if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_US, TimerHandler0))
-      Log.notice("Starting  ITimer0 OK, millis() = %d\n",millis());
+      notice("Starting  ITimer0 OK, millis() = %d\n",millis());
   else
-      Log.error("Can't set ITimer0. Select another freq. or timer\n");
+      error("Can't set ITimer0. Select another freq. or timer\n");
 }
 #endif  // USEINTERRUPTS
 
@@ -116,7 +116,7 @@ void Needle::setup(void) {
     stepper.setAcceleration(maxaccel);   // Acceleration tuned for the right "look" (4000 step/s/s will get it up to vmax after rotating 90 deg, but seems to lose steps then)
     float tmax=maxspeed*1.0/maxaccel;
     float degmax=maxaccel*tmax*tmax/2/2;
-    Log.notice("Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation\n", maxspeed/2, tmax, degmax);
+    notice("Stepper setup to reach max speed of %d deg/sec after %.2f sec, %.0f degrees of rotation\n", maxspeed/2, tmax, degmax);
 #ifdef USEINTERRUPTS
     setuptimer();
 #endif
@@ -144,7 +144,7 @@ void Needle::sensorcheck(void) {
     if (sensorVals[position]==-1) {
 	nfound++;
 	if (nfound%10==0) {
-	    Log.verbose("Sensed %d positions\n",nfound);
+	    verbose("Sensed %d positions\n",nfound);
 	}
     }
     sensorVals[position]=analogRead(PIN_SENSOR);
@@ -183,7 +183,7 @@ void Needle::sensorcheck(void) {
 	sprintf(fmtbuf,"v=[v,struct('sensor',sensor,'peakpos',%d,'offset',%d,'area',%d,'xsum',%d,'range',%d:%d)];", peakpos,peakoffset,maxw,xsum,peakloc+1, peakloc+WINDOWSIZE);
 	SerialUSB.println(fmtbuf);
 	if (abs(peakpos)>5)
-	    Log.warning("**** PEAK SHIFT: %d\n",peakpos);
+	    warning("**** PEAK SHIFT: %d\n",peakpos);
 	
 	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360+NORTHOFFSET);
 	// Clear for another go
@@ -191,7 +191,7 @@ void Needle::sensorcheck(void) {
 	    sensorVals[i]=-1;   
 	nfound=0;
 	unsigned long toc=millis();
-	Log.verbose("Analysis took %ld msec\n",toc-tic);
+	verbose("Analysis took %ld msec\n",toc-tic);
     }
 }
 
@@ -290,6 +290,6 @@ void Needle::command(const char *cmd) {
 	SerialUSB.println("Field measurement");
 	stepperfield();
     } else {
-	Log.warning("Expected ND, NS, or NF");
+	warning("Expected ND, NS, or NF");
     }
 }

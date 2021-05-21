@@ -21,7 +21,7 @@ void SERCOM2_Handler() {
 char fmtbuf[200]; // Space to build formatted strings
 
 void cmdexec(char *buf) {
-    Log.notice("Exec: %s\n", buf);
+    notice("Exec: %s\n", buf);
   if (buf[0] == 'L')
       lorawanusercommand(buf+1);
   else if (buf[0] == 'G')
@@ -59,12 +59,12 @@ void cmdread(void) {
 unsigned int stackcheck(const char *module, unsigned int minstack) {
     // Check amount of stack space remaining
     if (Scheduler.stack() < minstack) {
-        Log.warning("%s: stack decreased from %d to %d\n",module,minstack,Scheduler.stack());
+        warning("%s: stack decreased from %d to %d\n",module,minstack,Scheduler.stack());
 	minstack=Scheduler.stack();
     }
     if (minstack<100) {
 	// Serious problem
-	Log.error("%s: stack overrun: %d remaining\n",module, minstack);
+	error("%s: stack overrun: %d remaining\n",module, minstack);
     }
     return minstack;
 }
@@ -104,17 +104,16 @@ void setup(void) {
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
 
-  //  Log.begin(LOG_LEVEL_VERBOSE, &SerialUSB,true);
-  Log.begin(LOG_LEVEL_NOTICE, &SerialUSB,true);
-  Log.notice("Logging on");
+  notice("Logging on (float: %f)\n",3.14f);
+
 #ifdef EXTERNALGPS
-  Log.notice("External GPS");
+  notice("External GPS\n");
 #endif
 #ifdef EXTERNALLORA
-  Log.notice("External LoRa");
+  notice("External LoRa\n");
 #endif
 #ifdef EXTERNALBLE
-  Log.notice("External BLE");
+  notice("External BLE\n");
   blesetup();
 #endif	
   

@@ -27,7 +27,7 @@ static magCalType magCal;
 IMU imu;
 
 void IMU::setup() {
-    Log.notice("imusetup\n");
+    notice("imusetup\n");
     delay(100);
     
     // Enable Grove connectors
@@ -41,7 +41,7 @@ void IMU::setup() {
     // Most functions return an error code - INV_SUCCESS (0)
     // indicates the IMU was present and successfully set up
     if (imu.begin() != INV_SUCCESS) {
-	Log.error("Unable to communicate with MPU-9250\n");
+	error("Unable to communicate with MPU-9250\n");
 	return;
     }
 
@@ -51,7 +51,7 @@ void IMU::setup() {
     // INV_X_GYRO, INV_Y_GYRO, or INV_Z_GYRO
     // Enable all sensors:
     if (imu.setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS) != INV_SUCCESS) {
-	Log.error("Unable to setSensors()\n");
+	error("Unable to setSensors()\n");
 	return;
     }
 
@@ -59,12 +59,12 @@ void IMU::setup() {
     // gyroscope and accelerometer full scale ranges.
     // Gyro options are +/- 250, 500, 1000, or 2000 dps
     if (imu.setGyroFSR(2000) != INV_SUCCESS) { // Set gyro to 2000 dps
-	Log.error("Unable to setGyroFSR(2000)\n");
+	error("Unable to setGyroFSR(2000)\n");
 	return;
     }
     // Accel options are +/- 2, 4, 8, or 16 g
     if (imu.setAccelFSR(16)  != INV_SUCCESS) {  // Set accel to +/-2g
-	Log.error("Unable to setAccelFSR()\n");
+	error("Unable to setAccelFSR()\n");
 	return;
     }
     // Note: the MPU-9250's magnetometer FSR is set at 
@@ -75,14 +75,14 @@ void IMU::setup() {
     // Can be any of the following: 188, 98, 42, 20, 10, 5
     // (values are in Hz).
     if (imu.setLPF(5) != INV_SUCCESS) { // Set LPF corner frequency to 5Hz
-	Log.error("Unable to setLPF()\n");
+	error("Unable to setLPF()\n");
 	return;
     }
 
     // The sample rate of the accel/gyro can be set using
     // setSampleRate. Acceptable values range from 4Hz to 1kHz
     if (imu.setSampleRate(10) != INV_SUCCESS) { // Set sample rate to 10Hz
-	Log.error("Unable to setSampleRate()\n");
+	error("Unable to setSampleRate()\n");
 	return;
     } 
     
@@ -90,13 +90,13 @@ void IMU::setup() {
     // set using the setCompassSampleRate() function.
     // This value can range between: 1-100Hz
     if (imu.setCompassSampleRate(10) != INV_SUCCESS) { // Set mag rate to 10Hz
-	Log.error("Unable to setSensors()\n");
+	error("Unable to setSensors()\n");
 	return;
     }
 
     // Enable tap detection in the DMP. Set FIFO sample rate to 10Hz.
     if (imu.dmpBegin(DMP_FEATURE_TAP|DMP_FEATURE_6X_LP_QUAT , 10) != INV_SUCCESS) {
-	Log.error("Unable to dmpBegin()\n");
+	error("Unable to dmpBegin()\n");
 	return;
     }
     // dmpSetTap parameters, in order, are:
@@ -114,15 +114,15 @@ void IMU::setup() {
     unsigned short tapTime = 100; // Set tap time to 100ms
     unsigned short tapMulti = 1000;// Set multi-tap time to 1s
     if (imu.dmpSetTap(xThresh, yThresh, zThresh, taps, tapTime, tapMulti) != INV_SUCCESS) {
-	Log.error("Unable to dmpSetTap()\n");
+	error("Unable to dmpSetTap()\n");
 	return;
     }
   
-    Log.notice("9DOF Initialized: sampling Rate: AG:%d, M: %d\n",(int)imu.getSampleRate(), (int)imu.getCompassSampleRate());
+    notice("9DOF Initialized: sampling Rate: AG:%d, M: %d\n",(int)imu.getSampleRate(), (int)imu.getCompassSampleRate());
 
     magCal = calStorage.read();
     if (magCal.offset[0]==0.0) {
-	Log.warning("No magnetic calibration available - defaulting to self-calibration\n");
+	warning("No magnetic calibration available - defaulting to self-calibration\n");
     }
     haveimu=true;
 }
@@ -157,7 +157,7 @@ void IMU::updateCalibration(void) {
     static float scale_x = 1, scale_y = 1, scale_z = 1;
     static int offset_x = 0, offset_y = 0, offset_z = 0;
     if (changed) {
-	Log.notice("New mag range: [%d,%d]; [%d,%d]; [%d,%d]\n", mag_xmin, mag_xmax, mag_ymin, mag_ymax, mag_zmin, mag_zmax);
+	notice("New mag range: [%d,%d]; [%d,%d]; [%d,%d]\n", mag_xmin, mag_xmax, mag_ymin, mag_ymax, mag_zmin, mag_zmax);
 	offset_x = (mag_xmax + mag_xmin) / 2;
 	offset_y = (mag_ymax + mag_ymin) / 2;
 	offset_z = (mag_zmax + mag_zmin) / 2;
@@ -171,7 +171,7 @@ void IMU::updateCalibration(void) {
 	scale_x = avg_delta / avg_delta_x;
 	scale_y = avg_delta / avg_delta_y;
 	scale_z = avg_delta / avg_delta_z;
-	Log.notice("Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f\n", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
+	notice("Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f\n", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
     }
     if (magCal.offset[0]==0.0) {
 	// internal calibration
@@ -189,7 +189,7 @@ void IMU::updateCalibration(void) {
 	mag_z = (short)(c[0]*magCal.mat[0][2]+c[1]*magCal.mat[1][2]+c[2]*magCal.mat[2][2]);
 	static unsigned long lastdebug=0;
 	if (millis()-lastdebug>5000) {
-	    Log.notice("raw=[%d,%d,%d], calib=[%d,%d,%d]\n",rawmag_x,rawmag_y,rawmag_z,mag_x,mag_y,mag_z);
+	    notice("raw=[%d,%d,%d], calib=[%d,%d,%d]\n",rawmag_x,rawmag_y,rawmag_z,mag_x,mag_y,mag_z);
 	    lastdebug=millis();
 	}
     }
@@ -252,9 +252,9 @@ void IMU::loop() {
 	static unsigned long lastdbg = 0;
 	if (millis() - lastdbg > 10000 ) {
 	    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
-	    Log.notice("a=[%d,%d,%d] (mean:%.2f); g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f, raw=[%d,%d,%d] ", acc_x, acc_y, acc_z, meanmag, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field,rawmag_x,rawmag_y,rawmag_z);
+	    notice("a=[%d,%d,%d] (mean:%.2f); g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f, raw=[%d,%d,%d] ", acc_x, acc_y, acc_z, meanmag, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field,rawmag_x,rawmag_y,rawmag_z);
 	    imu.computeEulerAngles(true);
-	    Log.notice(", Roll: %.0f, Pitch: %.0f, Yaw: %.0f, Heading: %.0f, Tilt: %.0f\n", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
+	    notice(", Roll: %.0f, Pitch: %.0f, Yaw: %.0f, Heading: %.0f, Tilt: %.0f\n", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
 	    lastdbg = millis();
 	}
     }
@@ -265,7 +265,7 @@ void IMU::loop() {
 	imu.dmpUpdateFifo();
 	// Check for new tap data by polling tapAvailable
 	if ( imu.tapAvailable() )   {
-	    Log.notice("Tap %d, %d\n",imu.getTapDir(), imu.getTapCount());
+	    notice("Tap %d, %d\n",imu.getTapDir(), imu.getTapCount());
 	    uitap(gettilt());
 	}
     }
@@ -296,7 +296,7 @@ void IMU::monitor(void) {
 		needle.stepperadvance();
 		spos++;
 	    } else {
-		Log.notice("Got: %c\n",c);
+		notice("Got: %c\n",c);
 	    }
 	}
     }
@@ -326,6 +326,6 @@ void IMU::command(const char *cmd) {
 	
 	//enableStepper();
     } else
-	Log.warning("Expected IMON,  IMAGSET, or ICAL\n");
+	warning("Expected IMON,  IMAGSET, or ICAL\n");
 }
 #endif /* IMU_9250 */

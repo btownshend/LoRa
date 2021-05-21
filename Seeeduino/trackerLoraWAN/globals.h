@@ -2,7 +2,7 @@
 #define _GLOBALS_H_
 
 #include <Arduino.h>
-#include <ArduinoLog.h> // Logging: Log.*
+#include "log.h"
 
 extern char fmtbuf[];
 

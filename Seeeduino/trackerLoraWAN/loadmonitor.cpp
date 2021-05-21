@@ -8,7 +8,7 @@ void loadmonitorloop(void) {
 
     unsigned int interval=(unsigned int)(now-lasttime);
     if (interval>10000) {
-	Log.notice("Long thread loop: %d msec\n",interval);
+	notice("Long thread loop: %d msec\n",interval);
     }
     
     if (interval<mintime)
@@ -18,7 +18,7 @@ void loadmonitorloop(void) {
     samples++;
     if (now-avgstart > 5000000) {
 	float load = (now-avgstart-mintime*samples)*100/(now-avgstart);
-	Log.notice("Loop: min=%d,max=%d,avg=%ld usec -> %f%%\n", mintime, maxtime, (now-avgstart)/samples,load);
+	notice("Loop: min=%d,max=%d,avg=%ld usec -> %f%%\n", mintime, maxtime, (now-avgstart)/samples,load);
 	samples=0;
 	avgstart=now;
 	mintime=99999;
