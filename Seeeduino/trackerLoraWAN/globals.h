@@ -11,7 +11,7 @@ extern unsigned int stackcheck(const char *module, unsigned int minstack);
 extern Uart Serial3;   // External Serial port on LoRaWAN board (D4/D5).
 
 //#define EXTERNALGPS   // Define to use GPS connected to external serial port
-//#define EXTERNALBLE // BLE Connected
+#define EXTERNALBLE // BLE Connected
 //#define EXTERNALLORA
 
 #if defined(EXTERNALGPS) && defined(EXTERNALBLE)
