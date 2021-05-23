@@ -87,13 +87,13 @@ void statusReport(void) {
 	if (bleconnected)
 	    SerialBLE.println("--------------------");
 #endif
-	sprintf(fmtbuf,"%d/%d/%d %02d:%02d:%02d",month(),day(),year(),hour(),minute(),second()); statusLine(fmtbuf);
-	sprintf(fmtbuf,"DR%d, margin=%d, LCR=%d (%d sec);  RSSI=%d, SNR=%.1f (%d sec)",currentDR, gwmargin, pendingLCR, (millis()-lastLCR)/1000,lastRSSI,lastSNR,(millis()-lastReceived)/1000);statusLine(fmtbuf);
-	sprintf(fmtbuf,"Target %d: dist=%.0fm, heading=%.0f, age=%d", currentTarget, targets[currentTarget].getDistance(), targets[currentTarget].getHeading(),targets[currentTarget].getAge()); statusLine(fmtbuf);
+	sprintf(fmtbuf,"{\"devAddr\":\"%s\",\"frame\":[%d,%d],\"date\":\"%d/%d/%d %02d:%02d:%02d\",",devAddr,ulcntr,dlcntr,month(),day(),year(),hour(),minute(),second()); statusLine(fmtbuf);
+	sprintf(fmtbuf,"\"DR\":%d,\"margin\":%d,\"LCR\":%d,\"lastLCR\":%d,\"RSSI\":%d,\"SNR\":%.1f,\"lastSNR\":%d,",currentDR, gwmargin, pendingLCR, (millis()-lastLCR)/1000,lastRSSI,lastSNR,(millis()-lastReceived)/1000);statusLine(fmtbuf);
+	sprintf(fmtbuf,"\"target\":%d,\"tgtdist\":%.0f,\"tgtheading\":%.0f,\"tgtage\":%d,", currentTarget, targets[currentTarget].getDistance(), targets[currentTarget].getHeading(),targets[currentTarget].getAge()); statusLine(fmtbuf);
 	long lat, lon;   unsigned long age;
 	gps.get_position(&lat,&lon,&age);
-	sprintf(fmtbuf,"GPS: age:%d, nsat=%d",age/1000,gps.satellites()); statusLine(fmtbuf);
-	sprintf(fmtbuf,"a=[%d,%d,%d] heading=%.0f",imu.acc_x,imu.acc_y,imu.acc_z,imu.getHeading()); statusLine(fmtbuf);
+	sprintf(fmtbuf,"\"myage\":%d,\"nsat\":%d,",age/1000,gps.satellites()); statusLine(fmtbuf);
+	sprintf(fmtbuf,"\"acc\":[%d,%d,%d],\"heading\":%.0f}",imu.acc_x,imu.acc_y,imu.acc_z,imu.getHeading()); statusLine(fmtbuf);
 	lastReport=millis();
     }
 }
