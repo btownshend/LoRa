@@ -23,6 +23,8 @@ int lastRSSI = 999;  // RSSI of last received message
 unsigned long lastReceived = 0;  // Time  of last received message (millis)
 int pendingLCR = 0;   // Number of LCR messages sent since last response received
 unsigned long lastLCR = 0; // Last LCR messager received (millis)
+char devAddr[12]="??";
+int ulcntr=0, dlcntr=0;
 
 void lorawrite(const char *str);  // Forward declaration
 void processLoRa(char *buf);
@@ -93,8 +95,10 @@ bool setDR() {
 void join() {
     // while (!lora.setOTAAJoin(JOIN));
     lorawrite("AT+JOIN");
-    // TODO: Should verify response
     notice("Join request initiated\n");
+    sprintf(fmtbuf, "AT+ID", currentDR);  // Request the device address
+    lorawrite(fmtbuf);
+    notice("ID request initiated\n");
 }
 
 void loraread() {
@@ -183,6 +187,9 @@ void send() {
     static unsigned char data[100];
     unsigned char *dptr = data;
 
+    // Update counters
+    lorawrite("AT+LW=ULDL");
+    
     if ((int)sizeof(data)-1 < maxmsglen)
 	maxmsglen=sizeof(data)-1;   // Avoid overflows
   
@@ -357,6 +364,16 @@ void processLoRa(char *buf) {
 	;  // Ignore
     } else if (strncmp(buf, "+DR: ",5) == 0) {
 	;  // Ignore
+    } else if (strncmp(buf, "+ID: DevAddr, ",14) == 0) {
+	strncpy(devAddr,&buf[14],sizeof(devAddr)+1);
+	notice("devAddr=%s\n",devAddr);
+    } else if (strncmp(buf, "+LW: ULDL, ",11) == 0) { // +LW: ULDL, 867, 265
+	int nr=sscanf(buf, "+LW: ULDL, %d, %d",&ulcntr, &dlcntr);
+	if (nr!=2)
+	    error("Failed ULDL parse: %s\n",buf);
+	else {
+	    notice("UL: %d, DL:%d\n",ulcntr,dlcntr);
+	}
     } else {
 	warning("*** Unparsed message: %s\n",buf);
     }

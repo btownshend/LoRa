@@ -10,3 +10,5 @@ extern float lastSNR;  // SNR of last received message
 extern int lastRSSI;  // RSSI of last received message
 extern unsigned long lastReceived;  // Time (msec) of last received message
 extern unsigned long lastLCR;  // Time (msec) of last LCR message received
+extern char devAddr[];  // Device address
+extern int ulcntr, dlcntr;
