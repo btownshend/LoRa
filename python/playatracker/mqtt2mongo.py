@@ -1,6 +1,7 @@
 # !/usr/bin/python
 import json
 import time
+from json import JSONDecodeError
 
 import paho.mqtt.client as mqtt
 from pymongo import MongoClient
@@ -10,6 +11,7 @@ class MQTT2Mongo:
     def __init__(self):
         super().__init__()
         self.on_message_gateway_event = None
+        self.uartrx=""
         self.initMongo()
         self.initMQTT()
 
@@ -36,26 +38,52 @@ class MQTT2Mongo:
 
     # noinspection PyUnusedLocal
     def on_message(self, client, userdata, msg):
-        j = json.loads(msg.payload)
+        if mqtt.topic_matches_sub('uart/rx',msg.topic):
+            self.uartrx+=msg.payload.decode('utf-8')
+            left=self.uartrx.find('{')
+            right=self.uartrx.find('}')
+            if left!=-1 and right!=-1 and right>left:
+                try:
+                    j=json.loads(self.uartrx[left:right+1])
+                    self.uartrx=self.uartrx[right+1:]
+                except JSONDecodeError as ex:
+                    print(f"{self.uartrx[left:right+1]} not JSON")
+                    self.uartrx=self.uartrx[right+1:]
+                    return
+            else:
+                if left>0:
+                    self.uartrx=self.uartrx[left:]
+                return
+        else:
+            try:
+                j = json.loads(msg.payload)
+            except JSONDecodeError as ex:
+                print(f"{msg.topic} not JSON")
+                return
         j['topic']=msg.topic
         if msg.mid != 0:
             j['_id']=msg.mid
             print(f"mid={mid}")
         if mqtt.topic_matches_sub('application/2/device/+/rx',msg.topic):
-            result=self.db.rx.insert_one(j)
+            collection=self.db.rx
         elif mqtt.topic_matches_sub('application/2/device/+/status',msg.topic):
-            result=self.db.status.insert_one(j)
+            collection=self.db.status
         elif mqtt.topic_matches_sub('gateway/+/event/stats',msg.topic):
-            result=self.db.gwstats.insert_one(j)
+            collection=self.db.gwstats
         elif mqtt.topic_matches_sub('gateway/+/event/#',msg.topic):
-            result=self.db.gwevent.insert_one(j)
+            collection=self.db.gwevent
         elif mqtt.topic_matches_sub('gateway/+/command/#',msg.topic):
-            result=self.db.gwcommand.insert_one(j)
+            collection=self.db.gwcommand
+        elif mqtt.topic_matches_sub('uart/tx',msg.topic):
+            collection=self.db.uarttx
+        elif mqtt.topic_matches_sub('uart/rx',msg.topic):
+            print(j)
+            collection=self.db.uartrx
         else:
             print(f"Unrecognized topic: {msg.topic}")
-            result=self.db.other.insert_one(j)
-            return
-        print(f"{msg.topic} -> {result}")
+            collection=self.db.other
+        result=collection.insert_one(j)
+        print(f"{msg.topic} inserted into {collection.name}")
 
     def initMQTT(self):
         self.client = mqtt.Client()
