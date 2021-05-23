@@ -349,7 +349,7 @@ void processLoRa(char *buf) {
 	if (nr!=2)
 	    error("Failed Link parse: %s\n",buf);
 	else {
-	    notice("Link margin: %d\n");
+	    notice("Link margin: %d\n",gwmargin);
 	}
 	pendingLCR=0;  // Clear the pending LCR
 	lastLCR = millis();
