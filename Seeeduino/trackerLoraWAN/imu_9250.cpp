@@ -285,7 +285,11 @@ void IMU::monitor(void) {
     while (true) {
 	if (imu.dataReady()) {
 	    imu.update(UPDATE_ACCEL|UPDATE_GYRO|UPDATE_COMPASS);
+#ifdef FULLDATA
 	    sprintf(fmtbuf,"Raw:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz,spos);
+#else // Compat with MotionCal
+	    sprintf(fmtbuf,"Raw:%d,%d,%d,%d,%d,%d,%d,%d,%d", imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz);
+#endif
 	    SerialUSB.println(fmtbuf);
 	}
 	if (SerialUSB.available()) {
