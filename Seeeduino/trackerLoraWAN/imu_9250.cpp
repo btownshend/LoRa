@@ -133,12 +133,12 @@ void IMU::setup() {
     // taps: Minimum number of taps needed for interrupt (1-4)
     // tap time: milliseconds between valid taps
     // tap time multi: max milliseconds between multi-taps
-    unsigned short xThresh = 100;   // Disable x-axis tap
-    unsigned short yThresh = 100;   // Disable y-axis tap
-    unsigned short zThresh = 100; // Set z-axis tap thresh to 100 mg/ms
-    unsigned char taps = 1;       // Set minimum taps to 1
-    unsigned short tapTime = 100; // Set tap time to 100ms
-    unsigned short tapMulti = 1000;// Set multi-tap time to 1s
+    const unsigned short xThresh = 100;
+    const unsigned short yThresh = 100;
+    const unsigned short zThresh = 100; // Set z-axis tap thresh to 100 mg/ms
+    const unsigned char taps = 1;       // Set minimum taps to 1
+    const unsigned short tapTime = 100; // Set tap time to 100ms
+    const unsigned short tapMulti = 1000;// Set multi-tap time to 1s
     if (imu.dmpSetTap(xThresh, yThresh, zThresh, taps, tapTime, tapMulti) != INV_SUCCESS) {
 	error("Unable to dmpSetTap()\n");
 	return;
