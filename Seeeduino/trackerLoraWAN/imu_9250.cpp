@@ -14,6 +14,9 @@ float acc_mag;  // Total magnitude of acceleration
 float acc_external;  // External acceleration
 const float stillaccel = 0.01f;  // External acceleration less than this to be considered still
 
+const float UTPERUNIT=0.15f;
+const float GPERUNIT=16.0/32768;
+const float DPSPERUNIT=2000.0/32768;
 
 typedef struct {
     // Calibration of magnetometer
@@ -63,7 +66,7 @@ void IMU::setup() {
 	return;
     }
     // Accel options are +/- 2, 4, 8, or 16 g
-    if (imu.setAccelFSR(16)  != INV_SUCCESS) {  // Set accel to +/-2g
+    if (imu.setAccelFSR(16)  != INV_SUCCESS) {  // Set accel to +/-16g
 	error("Unable to setAccelFSR()\n");
 	return;
     }
@@ -74,14 +77,14 @@ void IMU::setup() {
     // of the accelerometer and gyroscope.
     // Can be any of the following: 188, 98, 42, 20, 10, 5
     // (values are in Hz).
-    if (imu.setLPF(5) != INV_SUCCESS) { // Set LPF corner frequency to 5Hz
+    if (imu.setLPF(42) != INV_SUCCESS) { // Set LPF corner frequency to 5Hz
 	error("Unable to setLPF()\n");
 	return;
     }
 
     // The sample rate of the accel/gyro can be set using
     // setSampleRate. Acceptable values range from 4Hz to 1kHz
-    if (imu.setSampleRate(10) != INV_SUCCESS) { // Set sample rate to 10Hz
+    if (imu.setSampleRate(100) != INV_SUCCESS) { // Set sample rate to 10Hz
 	error("Unable to setSampleRate()\n");
 	return;
     } 
@@ -89,13 +92,18 @@ void IMU::setup() {
     // Likewise, the compass (magnetometer) sample rate can be
     // set using the setCompassSampleRate() function.
     // This value can range between: 1-100Hz
-    if (imu.setCompassSampleRate(10) != INV_SUCCESS) { // Set mag rate to 10Hz
+    if (imu.setCompassSampleRate(100) != INV_SUCCESS) { // Set mag rate to 10Hz
 	error("Unable to setSensors()\n");
 	return;
     }
 
+    if (imu.configureFifo(INV_XYZ_GYRO || INV_XYZ_ACCEL) != INV_SUCCESS) {
+	error("Unable to configureFifo()\n");
+	return;
+    }
+    
     // Enable tap detection in the DMP. Set FIFO sample rate to 10Hz.
-    if (imu.dmpBegin(DMP_FEATURE_TAP|DMP_FEATURE_6X_LP_QUAT , 10) != INV_SUCCESS) {
+    if (imu.dmpBegin(DMP_FEATURE_TAP|DMP_FEATURE_SEND_RAW_ACCEL|DMP_FEATURE_SEND_RAW_GYRO|DMP_FEATURE_6X_LP_QUAT , 100) != INV_SUCCESS) {
 	error("Unable to dmpBegin()\n");
 	return;
     }
@@ -125,55 +133,66 @@ void IMU::setup() {
 	warning("No magnetic calibration available - defaulting to self-calibration\n");
     }
     haveimu=true;
+
+    // Initialize AHRS filter at 100Hz update rate
+    filter.begin(100);
+
+    // Verify constants
+    if (DPSPERUNIT != 1.0/imu.getGyroSens())
+	warning("DPSPERUNIT=%f, but gyro sensitivity=%f\n", DPSPERUNIT, 1.0/imu.getGyroSens());
+    if (GPERUNIT!=1.0/imu.getAccelSens())
+	warning("GPERUNIT=%f, but acc sensitivity=%f\n", GPERUNIT, 1.0/imu.getAccelSens());
+    if (UTPERUNIT!=imu.getMagSens())
+	warning("UTPERUNIT=%f, but mag sensitivity=%f\n", UTPERUNIT, imu.getMagSens());
 }
 
 void IMU::updateCalibration(void) {
-    static short mag_xmin = -10, mag_xmax = 10, mag_ymin = -10, mag_ymax = 10, mag_zmin = -10, mag_zmax = 10;
-    bool changed = false;
-    if (rawmag_x < mag_xmin) {
-	mag_xmin = rawmag_x;
-	changed = true;
-    }
-    if (rawmag_x > mag_xmax) {
-	mag_xmax = rawmag_x;
-	changed = true;
-    }
-    if (rawmag_y < mag_ymin) {
-	mag_ymin = rawmag_y;
-	changed = true;
-    }
-    if (rawmag_y > mag_ymax) {
-	mag_ymax = rawmag_y;
-	changed = true;
-    }
-    if (rawmag_z < mag_zmin) {
-	mag_zmin = rawmag_z;
-	changed = true;
-    }
-    if (rawmag_z > mag_zmax) {
-	mag_zmax = rawmag_z;
-	changed = true;
-    }
-    static float scale_x = 1, scale_y = 1, scale_z = 1;
-    static int offset_x = 0, offset_y = 0, offset_z = 0;
-    if (changed) {
-	notice("New mag range: [%d,%d]; [%d,%d]; [%d,%d]\n", mag_xmin, mag_xmax, mag_ymin, mag_ymax, mag_zmin, mag_zmax);
-	offset_x = (mag_xmax + mag_xmin) / 2;
-	offset_y = (mag_ymax + mag_ymin) / 2;
-	offset_z = (mag_zmax + mag_zmin) / 2;
-
-	float avg_delta_x = (mag_xmax - mag_xmin) / 2.0;
-	float avg_delta_y = (mag_ymax - mag_ymin) / 2.0;
-	float avg_delta_z = (mag_zmax - mag_zmin) / 2.0;
-
-	float avg_delta = (avg_delta_x + avg_delta_y + avg_delta_z) / 3.0;
-
-	scale_x = avg_delta / avg_delta_x;
-	scale_y = avg_delta / avg_delta_y;
-	scale_z = avg_delta / avg_delta_z;
-	notice("Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f\n", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
-    }
     if (magCal.offset[0]==0.0) {
+	static short mag_xmin = -10, mag_xmax = 10, mag_ymin = -10, mag_ymax = 10, mag_zmin = -10, mag_zmax = 10;
+	bool changed = false;
+	if (rawmag_x < mag_xmin) {
+	    mag_xmin = rawmag_x;
+	    changed = true;
+	}
+	if (rawmag_x > mag_xmax) {
+	    mag_xmax = rawmag_x;
+	    changed = true;
+	}
+	if (rawmag_y < mag_ymin) {
+	    mag_ymin = rawmag_y;
+	    changed = true;
+	}
+	if (rawmag_y > mag_ymax) {
+	    mag_ymax = rawmag_y;
+	    changed = true;
+	}
+	if (rawmag_z < mag_zmin) {
+	    mag_zmin = rawmag_z;
+	    changed = true;
+	}
+	if (rawmag_z > mag_zmax) {
+	    mag_zmax = rawmag_z;
+	    changed = true;
+	}
+	static float scale_x = 1, scale_y = 1, scale_z = 1;
+	static int offset_x = 0, offset_y = 0, offset_z = 0;
+	if (changed) {
+	    notice("New mag range: [%d,%d]; [%d,%d]; [%d,%d]\n", mag_xmin, mag_xmax, mag_ymin, mag_ymax, mag_zmin, mag_zmax);
+	    offset_x = (mag_xmax + mag_xmin) / 2;
+	    offset_y = (mag_ymax + mag_ymin) / 2;
+	    offset_z = (mag_zmax + mag_zmin) / 2;
+
+	    float avg_delta_x = (mag_xmax - mag_xmin) / 2.0;
+	    float avg_delta_y = (mag_ymax - mag_ymin) / 2.0;
+	    float avg_delta_z = (mag_zmax - mag_zmin) / 2.0;
+
+	    float avg_delta = (avg_delta_x + avg_delta_y + avg_delta_z) / 3.0;
+
+	    scale_x = avg_delta / avg_delta_x;
+	    scale_y = avg_delta / avg_delta_y;
+	    scale_z = avg_delta / avg_delta_z;
+	    notice("Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f\n", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
+	}
 	// internal calibration
 	mag_x = (short)((rawmag_x - offset_x) * scale_x);
 	mag_y = (short)((rawmag_y - offset_y) * scale_y);
@@ -223,24 +242,40 @@ float IMU::gettilt(void) {
 
 void IMU::loop() {
     // Check for new data
-    if (imu.dataReady()) {
-	// Got new data, save it
+    // Check for new data in the FIFO
+    static int nsamps=0;
+    static int nyield=0;
+    
+    while ( imu.fifoAvailable() )  {
+	// Updates acc, gyro values from FIFO
+	nsamps++;
+	imu.dmpUpdateFifo();
+
+	// Got new data, save it in NWU orientation
+	gyro_x = imu.gx; gyro_y = imu.gy; gyro_z =-imu.gz;  // Normal orientation - swapped from magnet
+	acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation - swapped from magnet
+
+#ifndef IMUTEST
 	if (needle.timesinceactive() > 200) {
+#endif
 	    // Only update the magnetometer when the stepping motor has been off 
-	    imu.update(UPDATE_ACCEL|UPDATE_GYRO|UPDATE_COMPASS);
-	    rawmag_x = imu.mx; rawmag_y = -imu.mz; rawmag_z = imu.my;  // Module is mounted on side (differently from gyro and acc)
+	    imu.update(UPDATE_COMPASS);
+	    rawmag_x = imu.mx; rawmag_y = imu.my; rawmag_z = imu.mz;  // Magnetometer swaps x & y relative to accel/gyro and inverts z
 	    //rawmag_x = imu.mx; rawmag_y = imu.my; rawmag_z = imu.mz;  // Normal orientation
+	    updateCalibration();  
+#ifdef LAYFLAT
+	    filter.update(gyro_x*DPSPERUNIT, gyro_y*DPSPERUNIT,gyro_z*DPSPERUNIT,acc_x*GPERUNIT, acc_y*GPERUNIT, acc_z*GPERUNIT, mag_x*UTPERUNIT, mag_y*UTPERUNIT, mag_z*UTPERUNIT);
+#else
+	    // On side
+	    filter.update(gyro_y*DPSPERUNIT, gyro_z*DPSPERUNIT,gyro_x*DPSPERUNIT,acc_y*GPERUNIT, acc_z*GPERUNIT, acc_x*GPERUNIT, mag_x*UTPERUNIT, -mag_z*UTPERUNIT, mag_y*UTPERUNIT);
+#endif
+#ifndef IMUTEST
 	} else
-	    // Skip compass reading
-	    imu.update(UPDATE_ACCEL|UPDATE_GYRO);
+	    // Skip compass reading, free-run the filter
+	    filter.updateIMU(gyro_x*DPSPERUNIT, gyro_y*DPSPERUNIT,gyro_z*DPSPERUNIT,acc_x*GPERUNIT, acc_y*GPERUNIT, acc_z*GPERUNIT);
+#endif
 
-	gyro_x = imu.gy; gyro_y = imu.gz; gyro_z = imu.gx;  // Mounted on side
-	//gyro_x = imu.gx; gyro_y = imu.gy; gyro_z = imu.gz;  // Normal orientation
-	acc_x = imu.ay; acc_y = imu.az; acc_z = imu.ax;  // Mounted on side
-	//acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation
-	updateCalibration();  
-
-	acc_mag = sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y+1.0f*acc_z*acc_z)/2048;
+	acc_mag = sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y+1.0f*acc_z*acc_z)*GPERUNIT;
 	static float meanmag=1.0f;
 	meanmag=meanmag*0.999+acc_mag*.001;
 	acc_external = fabs(acc_mag-meanmag);
@@ -250,19 +285,22 @@ void IMU::loop() {
 	}
     
 	static unsigned long lastdbg = 0;
+#ifdef IMUTEST
+	if (millis() - lastdbg > 1000 ) {
+#else
 	if (millis() - lastdbg > 10000 ) {
+#endif
 	    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
-	    notice("a=[%d,%d,%d] (mean:%.2f); g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f, raw=[%d,%d,%d] ", acc_x, acc_y, acc_z, meanmag, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field,rawmag_x,rawmag_y,rawmag_z);
+	    notice("   a=[%d,%d,%d] (mean:%.2f); g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f, raw=[%d,%d,%d]\n", acc_x, acc_y, acc_z, meanmag, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field,rawmag_x,rawmag_y,rawmag_z);
 	    imu.computeEulerAngles(true);
-	    notice(", Roll: %.0f, Pitch: %.0f, Yaw: %.0f, Heading: %.0f, Tilt: %.0f\n", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
+	    notice("Raw:    Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f\n", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
+	    notice("Filter: Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f\n", filter.getRoll(), filter.getPitch(), filter.getYaw());
+	    notice("Rate: %.0f  Y:%d,S:%d\n", nsamps*1000.0f/(millis()-lastdbg),nyield,nsamps);
+	    nsamps=0;
+	    nyield=0;
 	    lastdbg = millis();
 	}
-    }
 
-    // Check for new data in the FIFO
-    while ( imu.fifoAvailable() )  {
-	// DMP FIFO must be updated in order to update tap data
-	imu.dmpUpdateFifo();
 	// Check for new tap data by polling tapAvailable
 	if ( imu.tapAvailable() )   {
 	    notice("Tap %d, %d\n",imu.getTapDir(), imu.getTapCount());
@@ -273,6 +311,7 @@ void IMU::loop() {
     // Check stack
     static int minstack=100000; minstack=stackcheck("IMU",minstack);
     yield();
+    nyield++;
 }
 
 void IMU::monitor(bool matlabMode) {

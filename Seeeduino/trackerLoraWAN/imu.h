@@ -1,7 +1,12 @@
 #include <SparkFunMPU9250-DMP.h>
+#include <MadgwickAHRS.h>
+//#include <NXPMotionSense.h>
+//#include <Adafruit_AHRS.h>
 
 class IMU {
     MPU9250_DMP imu;
+    Madgwick filter;
+    //    Adafruit_NXPSensorFusion filter;
  public:
     short acc_x, acc_y, acc_z;
     short orient_x, orient_y,orient_z;  // Orientation, updated only when device is not accelerating (other than gravity)
@@ -17,7 +22,7 @@ class IMU {
     bool isstill(void);
  private:
     float gettilt(void);
-    void monitor(void);
+    void monitor(bool);
     void updateCalibration(void);
 };
 
