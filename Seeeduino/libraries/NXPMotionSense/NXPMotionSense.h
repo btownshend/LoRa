@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <EEPROM.h>
+//#include <EEPROM.h>
 
 // TODO: move these inside class namespace
 #define G_PER_COUNT            0.0001220703125f  // = 1/8192

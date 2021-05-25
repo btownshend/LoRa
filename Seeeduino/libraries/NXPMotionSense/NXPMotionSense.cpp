@@ -1,6 +1,8 @@
 #include "NXPMotionSense.h"
 #include "utility/NXPSensorRegisters.h"
+#if 0
 #include <util/crc16.h>
+#endif
 
 #define NXP_MOTION_CAL_EEADDR  60
 #define NXP_MOTION_CAL_SIZE    68
@@ -32,6 +34,7 @@ bool NXPMotionSense::begin()
 	}
 	//Serial.println("init done");
 
+#if 0
 	for (i=0; i < NXP_MOTION_CAL_SIZE; i++) {
 		buf[i] = EEPROM.read(NXP_MOTION_CAL_EEADDR + i);
 	}
@@ -45,6 +48,7 @@ bool NXPMotionSense::begin()
 		memset(cal, 0, sizeof(cal));
 		cal[9] = 50.0f;
 	}
+#endif	
 	return true;
 
 }
