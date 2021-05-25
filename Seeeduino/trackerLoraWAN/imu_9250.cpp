@@ -275,21 +275,39 @@ void IMU::loop() {
     yield();
 }
 
-void IMU::monitor(void) {
+void IMU::monitor(bool matlabMode) {
     // Go into IMU monitoring until another character is received
     // Do not call yield or delay or another task will execute
-    SerialUSB.println("+++IMON+++");
+    if (matlabMode)
+	SerialUSB.println("+++IMAT+++");
+    else
+	SerialUSB.println("+++IMON+++");
+	
     while (SerialUSB.available())
 	SerialUSB.read();
     int spos=0;
+    int cntr=0;
     while (true) {
-	if (imu.dataReady()) {
-	    imu.update(UPDATE_ACCEL|UPDATE_GYRO|UPDATE_COMPASS);
-#ifdef FULLDATA
-	    sprintf(fmtbuf,"Raw:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz,spos);
-#else // Compat with MotionCal
-	    sprintf(fmtbuf,"Raw:%d,%d,%d,%d,%d,%d,%d,%d,%d", imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz);
-#endif
+	if (matlabMode && cntr>=100) {
+	    sprintf(fmtbuf,"MAGSET %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+		    magCal.offset[0],magCal.offset[1],magCal.offset[2],
+		    magCal.mat[0][0],magCal.mat[0][1],magCal.mat[0][2],
+		    magCal.mat[1][0],magCal.mat[1][1],magCal.mat[1][2],
+		    magCal.mat[2][0],magCal.mat[2][1],magCal.mat[2][2]);
+	    SerialUSB.println(fmtbuf);
+	    cntr=0;
+	}
+	cntr++;
+
+	if ( imu.fifoAvailable() )  {
+	    // Updates acc, gyro values from FIFO
+	    imu.dmpUpdateFifo();
+	    // On-demand read of compass
+	    imu.update(UPDATE_COMPASS);
+	    if (matlabMode)
+		sprintf(fmtbuf,"Mat:%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(), imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz,spos);
+	    else // Compat with MotionCal
+		sprintf(fmtbuf,"Raw:%d,%d,%d,%d,%d,%d,%d,%d,%d", imu.ax,imu.ay,imu.az,imu.gx,imu.gy,imu.gz,imu.mx,imu.my,imu.mz);
 	    SerialUSB.println(fmtbuf);
 	}
 	if (SerialUSB.available()) {
@@ -309,8 +327,10 @@ void IMU::monitor(void) {
 
 void IMU::command(const char *cmd) {
     if (strcmp(cmd,"MON")==0)
-	monitor();
-    else if (strncmp(cmd,"MAGSET",6)==0) {
+	monitor(false);
+    else if (strcmp(cmd,"MAT")==0) {
+	monitor(true);
+    } else if (strncmp(cmd,"MAGSET",6)==0) {
 	float offset[3], mat[3][3];
 	int nr=sscanf(cmd,"MAGSET %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
 		      &magCal.offset[0],&magCal.offset[1],&magCal.offset[2],

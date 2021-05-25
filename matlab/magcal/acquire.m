@@ -3,4 +3,5 @@ if ~exist('s','var')
   devname='/dev/cu.usbmodem401';
   s=ardserial(devname);
 end
-d=s.getimutest(3000);
+s.acquire(3000);
+s.plotmag();

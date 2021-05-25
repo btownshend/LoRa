@@ -9,8 +9,3 @@ s.writeline('LAT+VER');
 if (~s.waitfor('<LORA: +VER',1))
   return;
 end
-
-d=s.getimutest(100);
-
-
-%clear s;
