@@ -8,6 +8,7 @@
 #include "imu.h"
 #include "ui.h"
 #include "needle.h"
+#include "imucal.h"
 
 // 9DOF
 float acc_mag;  // Total magnitude of acceleration
@@ -18,12 +19,6 @@ const float UTPERUNIT=0.15f;
 const float GPERUNIT=16.0/32768;
 const float DPSPERUNIT=2000.0/32768;
 
-typedef struct {
-    // Calibration of magnetometer
-    // Calibrated val = (raw-offset)*mat
-    float offset[3];
-    float mat[3][3];   // calibration matrix,  mat[ij][j] is row i, col j
-} magCalType;
 
 FlashStorage(calStorage, magCalType);
 static magCalType magCal;
@@ -131,6 +126,8 @@ void IMU::setup() {
     magCal = calStorage.read();
     if (magCal.offset[0]==0.0) {
 	warning("No magnetic calibration available - defaulting to self-calibration\n");
+	magCal=defaultMagCal;
+	warning("Initialized magCal from defaults\n");
     }
     haveimu=true;
 
