@@ -24,6 +24,29 @@ FlashStorage(calStorage, magCalType);
 static magCalType magCal;
 IMU imu;
 
+#define LAYFLAT
+#define NWU  // Assume NED or NWU orientation of axes
+
+static void NED2NWU(float &x, float &y, float &z) {
+    // NWU would make world x=x, world y=-y, world z=-z
+    y=-y;
+    z=-z;
+}
+
+static void NED2ENU(float &x, float &y, float &z) {
+    float tmp=y;
+    y=x;
+    x=tmp;
+    z=-z;
+}
+
+static void Flat2Side(float &x, float &y, float &z) {
+    // Putting the sensor on its side swaps y,z, negates z
+    float tmp=y;
+    y=z;
+    z=-tmp;
+}
+
 void IMU::setup() {
     notice("imusetup\n");
     delay(100);
@@ -249,30 +272,36 @@ void IMU::loop() {
 	imu.dmpUpdateFifo();
 
 	// Got new data, save it in NWU orientation
-	gyro_x = imu.gx; gyro_y = imu.gy; gyro_z =-imu.gz;  // Normal orientation - swapped from magnet
+	gyro_x = imu.gx; gyro_y = imu.gy; gyro_z =imu.gz;  // Normal orientation - swapped from magnet
 	acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation - swapped from magnet
+	float fgx,fgy,fgz,fax,fay,faz,fmx,fmy,fmz;
+
+	imu.update(UPDATE_COMPASS);
+	updateCalibration();
+	// Convert to dimensioned units and align mag with accel,gyro (ENU)
+	fgx=gyro_x*DPSPERUNIT; fgy=gyro_y*DPSPERUNIT; fgz=gyro_z*DPSPERUNIT;
+	fax=acc_x*GPERUNIT;  fay=acc_y*GPERUNIT; faz=acc_z*GPERUNIT;
+	fmx=mag_y*UTPERUNIT;  fmy=mag_x*UTPERUNIT; fmz=-mag_z*UTPERUNIT;
+	// All 3 now point the same way as accel/gyro, which is ENU when laying flat (N long way toward grove connector)
+#ifndef LAYFLAT
+	// On its side so world x=x, world y=z, world z=-y 
+	Flat2Side(fgx,fgy,fgz);
+	Flat2Side(fax,fay,faz);
+	Flat2Side(fmx,fmy,fmz);
+#endif
 
 #ifndef IMUTEST
-	if (needle.timesinceactive() > 200) {
-#endif
+	if (needle.timesinceactive() > 200)
 	    // Only update the magnetometer when the stepping motor has been off 
-	    imu.update(UPDATE_COMPASS);
-	    rawmag_x = imu.mx; rawmag_y = imu.my; rawmag_z = imu.mz;  // Magnetometer swaps x & y relative to accel/gyro and inverts z
-	    //rawmag_x = imu.mx; rawmag_y = imu.my; rawmag_z = imu.mz;  // Normal orientation
-	    updateCalibration();  
-#ifdef LAYFLAT
-	    filter.update(gyro_x*DPSPERUNIT, gyro_y*DPSPERUNIT,gyro_z*DPSPERUNIT,acc_x*GPERUNIT, acc_y*GPERUNIT, acc_z*GPERUNIT, mag_x*UTPERUNIT, mag_y*UTPERUNIT, mag_z*UTPERUNIT);
-#else
-	    // On side
-	    filter.update(gyro_y*DPSPERUNIT, gyro_z*DPSPERUNIT,gyro_x*DPSPERUNIT,acc_y*GPERUNIT, acc_z*GPERUNIT, acc_x*GPERUNIT, mag_x*UTPERUNIT, -mag_z*UTPERUNIT, mag_y*UTPERUNIT);
 #endif
+	    filter.update(fgx,fgy,fgz,fax,fay,faz,fmx,fmy,fmz);
 #ifndef IMUTEST
-	} else
+	else
 	    // Skip compass reading, free-run the filter
-	    filter.updateIMU(gyro_x*DPSPERUNIT, gyro_y*DPSPERUNIT,gyro_z*DPSPERUNIT,acc_x*GPERUNIT, acc_y*GPERUNIT, acc_z*GPERUNIT);
+	    filter.updateIMU(fgx,fgy,fgz,fax,fay,faz);
 #endif
 
-	acc_mag = sqrt(1.0f*acc_x*acc_x+1.0f*acc_y*acc_y+1.0f*acc_z*acc_z)*GPERUNIT;
+	acc_mag = sqrt(fax*fax+fay*fay+faz*faz);
 	static float meanmag=1.0f;
 	meanmag=meanmag*0.999+acc_mag*.001;
 	acc_external = fabs(acc_mag-meanmag);
@@ -287,12 +316,15 @@ void IMU::loop() {
 #else
 	if (millis() - lastdbg > 10000 ) {
 #endif
-	    double field = sqrt(1.0 * mag_x * mag_x + 1.0 * mag_y * mag_y + 1.0 * mag_z * mag_z);
-	    notice("   a=[%d,%d,%d] (mean:%.2f); g=[%d,%d,%d]; m=[%d,%d,%d]=%.0f, raw=[%d,%d,%d]\n", acc_x, acc_y, acc_z, meanmag, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,field,rawmag_x,rawmag_y,rawmag_z);
+	    float field = sqrt(fmx * fmx + fmy * fmy + fmz * fmz);
+	    notice("   a=[%4d,%4d,%4d]; g=[%d,%d,%d]; m=[%d,%d,%d], raw=[%d,%d,%d]\n", acc_x, acc_y, acc_z,  gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,imu.mx,imu.my,imu.mz);
+	    notice("   a=[%4.2f,%4.2f,%4.2f] (mean:%.2f g); g=[%.1f,%.1f,%.1f] d/s; m=[%.1f,%.1f,%.1f]=%.1f uT, rate=%.0f Hz [Y=%d,S=%d]\n",
+		   fax,fay,faz,acc_mag,fgx,fgy,fgz,fmx,fmy,fmz,field,nsamps*1000.0f/(millis()-lastdbg),nyield,nsamps);
 	    imu.computeEulerAngles(true);
+#if defined(LAYFLAT)
 	    notice("Raw:    Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f\n", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
+#endif
 	    notice("Filter: Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f\n", filter.getRoll(), filter.getPitch(), filter.getYaw());
-	    notice("Rate: %.0f  Y:%d,S:%d\n", nsamps*1000.0f/(millis()-lastdbg),nyield,nsamps);
 	    nsamps=0;
 	    nyield=0;
 	    lastdbg = millis();
