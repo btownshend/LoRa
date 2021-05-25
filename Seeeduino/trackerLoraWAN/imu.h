@@ -24,3 +24,6 @@ class IMU {
 extern IMU imu;
 
 inline void imuloop(void) { imu.loop(); }
+
+#define IMUTEST  // Disable all other threads
+

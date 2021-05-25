@@ -131,6 +131,7 @@ void setup(void) {
   
   if (imu.haveimu)
       Scheduler.startLoop(imuloop,2048);
+#ifndef IMUTEST
   Scheduler.startLoop(needleloop,2048);
   Scheduler.startLoop(gpsloop);
   Scheduler.startLoop(lorawanloop,2048);  // Needs more than 1024 bytes of stack space or sprintf causes problem
@@ -138,10 +139,13 @@ void setup(void) {
 #ifdef EXTERNALBLE
   Scheduler.startLoop(bleloop,2048);
 #endif
+#endif
 }
 
 void loop(void) {
     cmdread();
+#ifndef IMUTEST
     statusReport();
+#endif	
     yield(); 
 }
