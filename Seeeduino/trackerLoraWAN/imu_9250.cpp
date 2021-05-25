@@ -166,6 +166,17 @@ void IMU::setup() {
 	warning("UTPERUNIT=%f, but mag sensitivity=%f\n", UTPERUNIT, imu.getMagSens());
 }
 
+short IMU::getRawMag(int axis) const {
+    if (axis==0)
+	return imu.mx;
+    else if (axis==1)
+	return imu.my;
+    else if (axis==2)
+	return imu.mz;
+    error("getRawMag with bad axis %d\n", axis);
+    return 0;
+}
+
 void IMU::updateCalibration(void) {
     if (magCal.offset[0]==0.0) {
 	static short mag_xmin = -10, mag_xmax = 10, mag_ymin = -10, mag_ymax = 10, mag_zmin = -10, mag_zmax = 10;

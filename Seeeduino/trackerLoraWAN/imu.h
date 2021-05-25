@@ -17,6 +17,7 @@ class IMU {
     float getHeading(void);
     void command(const char *cmd);
     bool isstill(void);
+    short getRawMag(int axis) const;
  private:
     float gettilt(void);
     void monitor(bool);
