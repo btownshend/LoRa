@@ -234,12 +234,12 @@ void Needle::stepperfield(void) {
 	for (int phase=0;phase<4;phase++) { // Phases
 	    SerialUSB.print(phase);
 	    delay(100);    // Wait for magnetometer @10Hz
-	    sx[phase]+=imu.rawmag_x;
-	    sy[phase]+=imu.rawmag_y;
-	    sz[phase]+=imu.rawmag_z;
-	    sx2[phase]+=imu.rawmag_x*imu.rawmag_x;
-	    sy2[phase]+=imu.rawmag_y*imu.rawmag_y;
-	    sz2[phase]+=imu.rawmag_z*imu.rawmag_z;
+	    sx[phase]+=imu.imu.mx;
+	    sy[phase]+=imu.imu.my;
+	    sz[phase]+=imu.imu.mz;
+	    sx2[phase]+=imu.imu.mx*imu.imu.mx;
+	    sy2[phase]+=imu.imu.my*imu.imu.my;
+	    sz2[phase]+=imu.imu.mz*imu.imu.mz;
 	    move(1);   // Advance to next phase
 	    //while (stepper.isRunning()); // wait until moved
 	}

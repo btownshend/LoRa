@@ -147,28 +147,28 @@ void IMU::updateCalibration(void) {
     if (magCal.offset[0]==0.0) {
 	static short mag_xmin = -10, mag_xmax = 10, mag_ymin = -10, mag_ymax = 10, mag_zmin = -10, mag_zmax = 10;
 	bool changed = false;
-	if (rawmag_x < mag_xmin) {
-	    mag_xmin = rawmag_x;
+	if (imu.mx < mag_xmin) {
+	    mag_xmin = imu.mx;
 	    changed = true;
 	}
-	if (rawmag_x > mag_xmax) {
-	    mag_xmax = rawmag_x;
+	if (imu.mx > mag_xmax) {
+	    mag_xmax = imu.mx;
 	    changed = true;
 	}
-	if (rawmag_y < mag_ymin) {
-	    mag_ymin = rawmag_y;
+	if (imu.my < mag_ymin) {
+	    mag_ymin = imu.my;
 	    changed = true;
 	}
-	if (rawmag_y > mag_ymax) {
-	    mag_ymax = rawmag_y;
+	if (imu.my > mag_ymax) {
+	    mag_ymax = imu.my;
 	    changed = true;
 	}
-	if (rawmag_z < mag_zmin) {
-	    mag_zmin = rawmag_z;
+	if (imu.mz < mag_zmin) {
+	    mag_zmin = imu.mz;
 	    changed = true;
 	}
-	if (rawmag_z > mag_zmax) {
-	    mag_zmax = rawmag_z;
+	if (imu.mz > mag_zmax) {
+	    mag_zmax = imu.mz;
 	    changed = true;
 	}
 	static float scale_x = 1, scale_y = 1, scale_z = 1;
@@ -191,21 +191,21 @@ void IMU::updateCalibration(void) {
 	    notice("Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f\n", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
 	}
 	// internal calibration
-	mag_x = (short)((rawmag_x - offset_x) * scale_x);
-	mag_y = (short)((rawmag_y - offset_y) * scale_y);
-	mag_z = (short)((rawmag_z - offset_z) * scale_z);
+	mag_x = (short)((imu.mx - offset_x) * scale_x);
+	mag_y = (short)((imu.my - offset_y) * scale_y);
+	mag_z = (short)((imu.mz - offset_z) * scale_z);
     } else {
 	// stored calibration
 	float c[3];
-	c[0]=rawmag_x-magCal.offset[0];
-	c[1]=rawmag_y-magCal.offset[1];
-	c[2]=rawmag_z-magCal.offset[2];
+	c[0]=imu.mx-magCal.offset[0];
+	c[1]=imu.my-magCal.offset[1];
+	c[2]=imu.mz-magCal.offset[2];
 	mag_x = (short)(c[0]*magCal.mat[0][0]+c[1]*magCal.mat[1][0]+c[2]*magCal.mat[2][0]);
 	mag_y = (short)(c[0]*magCal.mat[0][1]+c[1]*magCal.mat[1][1]+c[2]*magCal.mat[2][1]);
 	mag_z = (short)(c[0]*magCal.mat[0][2]+c[1]*magCal.mat[1][2]+c[2]*magCal.mat[2][2]);
 	static unsigned long lastdebug=0;
 	if (millis()-lastdebug>5000) {
-	    notice("raw=[%d,%d,%d], calib=[%d,%d,%d]\n",rawmag_x,rawmag_y,rawmag_z,mag_x,mag_y,mag_z);
+	    notice("raw=[%d,%d,%d], calib=[%d,%d,%d]\n",imu.mx,imu.my,imu.mz,mag_x,mag_y,mag_z);
 	    lastdebug=millis();
 	}
     }
