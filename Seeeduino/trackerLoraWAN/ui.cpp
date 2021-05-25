@@ -23,7 +23,7 @@ int getuisetting(void) {
 	// Quantize to spacing deg so it clicks
 	int newsetting = (int((rotation+(spacing/2.0))/spacing))%8;
 	if (newsetting!=currsetting) {
-	    sprintf(fmtbuf,"UI setting %d -> %d (acc=[%d,%d,%d])", currsetting, newsetting,imu.acc_x,imu.acc_y,imu.acc_z);
+	    sprintf(fmtbuf,"UI setting %d -> %d", currsetting, newsetting);
 	    SerialUSB.println(fmtbuf);
 	    currsetting=newsetting;
 	}

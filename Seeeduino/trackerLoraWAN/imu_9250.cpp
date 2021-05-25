@@ -239,8 +239,8 @@ float IMU::getHeading(void) {
     // Get current heading in degrees
 
     // roll/pitch in radian
-    double roll = atan2((float)acc_y, (float)acc_z);
-    double pitch = atan2(-(float)acc_x, sqrt((float)acc_y * acc_y + (float)acc_z * acc_z));
+    double roll = atan2((float)imu.ay, (float)imu.az);
+    double pitch = atan2(-(float)imu.ax, sqrt((float)imu.ay * imu.ay + (float)imu.az * imu.az));
 
     double Xheading = mag_x * cos(pitch) + mag_y * sin(roll) * sin(pitch) + mag_z * cos(roll) * sin(pitch);
     double Yheading = mag_y * cos(roll) - mag_z * sin(pitch);
@@ -271,16 +271,15 @@ void IMU::loop() {
 	nsamps++;
 	imu.dmpUpdateFifo();
 
-	// Got new data, save it in NWU orientation
-	gyro_x = imu.gx; gyro_y = imu.gy; gyro_z =imu.gz;  // Normal orientation - swapped from magnet
-	acc_x = imu.ax; acc_y = imu.ay; acc_z = imu.az;  // Normal orientation - swapped from magnet
+	// Got new data, save it in ENU orientation
 	float fgx,fgy,fgz,fax,fay,faz,fmx,fmy,fmz;
 
 	imu.update(UPDATE_COMPASS);
 	updateCalibration();
+	// Assuming the board lays flat on earth, with grove connector at North end, then accel/gyro or ENU and mag is NED
 	// Convert to dimensioned units and align mag with accel,gyro (ENU)
-	fgx=gyro_x*DPSPERUNIT; fgy=gyro_y*DPSPERUNIT; fgz=gyro_z*DPSPERUNIT;
-	fax=acc_x*GPERUNIT;  fay=acc_y*GPERUNIT; faz=acc_z*GPERUNIT;
+	fgx=imu.gx*DPSPERUNIT; fgy=imu.gy*DPSPERUNIT; fgz=imu.gz*DPSPERUNIT;
+	fax=imu.ax*GPERUNIT;  fay=imu.ay*GPERUNIT; faz=imu.az*GPERUNIT;
 	fmx=mag_y*UTPERUNIT;  fmy=mag_x*UTPERUNIT; fmz=-mag_z*UTPERUNIT;
 	// All 3 now point the same way as accel/gyro, which is ENU when laying flat (N long way toward grove connector)
 #ifndef LAYFLAT
@@ -307,7 +306,7 @@ void IMU::loop() {
 	acc_external = fabs(acc_mag-meanmag);
 
 	if (isstill()) {
-	    orient_x=acc_x;orient_y=acc_y;orient_z=acc_z;
+	    orient_x=imu.ax;orient_y=imu.ay;orient_z=imu.az;
 	}
     
 	static unsigned long lastdbg = 0;
@@ -317,10 +316,11 @@ void IMU::loop() {
 	if (millis() - lastdbg > 10000 ) {
 #endif
 	    float field = sqrt(fmx * fmx + fmy * fmy + fmz * fmz);
-	    notice("   a=[%4d,%4d,%4d]; g=[%d,%d,%d]; m=[%d,%d,%d], raw=[%d,%d,%d]\n", acc_x, acc_y, acc_z,  gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z,imu.mx,imu.my,imu.mz);
+	    notice("   a=[%4d,%4d,%4d]; g=[%d,%d,%d]; m=[%d,%d,%d], raw=[%d,%d,%d]\n", imu.ax, imu.ay, imu.az,  imu.gx, imu.gy, imu.gz, mag_x, mag_y, mag_z,imu.mx,imu.my,imu.mz);
 	    notice("   a=[%4.2f,%4.2f,%4.2f] (mean:%.2f g); g=[%.1f,%.1f,%.1f] d/s; m=[%.1f,%.1f,%.1f]=%.1f uT, rate=%.0f Hz [Y=%d,S=%d]\n",
 		   fax,fay,faz,acc_mag,fgx,fgy,fgz,fmx,fmy,fmz,field,nsamps*1000.0f/(millis()-lastdbg),nyield,nsamps);
 	    imu.computeEulerAngles(true);
+	    // Note that pitch,roll, and yaw are defined as CW around the corresponding axes (in this 
 #if defined(LAYFLAT)
 	    notice("Raw:    Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f\n", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
 #endif
