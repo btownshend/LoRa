@@ -25,6 +25,7 @@ int pendingLCR = 0;   // Number of LCR messages sent since last response receive
 unsigned long lastLCR = 0; // Last LCR messager received (millis)
 char devAddr[12]="??";
 int ulcntr=0, dlcntr=0;
+bool newmargin=false;
 
 void lorawrite(const char *str);  // Forward declaration
 void processLoRa(char *buf);
@@ -73,10 +74,14 @@ bool setDR() {
 
     int tgtDR;
     
-    if (pendingLCR > 1)
+    if (newmargin) {
+	tgtDR = currentDR + (gwmargin - installmargin) * 2 / 5;
+	tgtDR = (currentDR+1)%5;   // Hack to collect data for different DR
+	newmargin=false;
+    } else if (pendingLCR > 1)
 	tgtDR = currentDR-1;
     else
-	tgtDR = ((gwmargin - installmargin) - (-20)) * 2 / 5;
+	return false;  // No change
 
     if (tgtDR < minDR)
 	tgtDR = minDR;
@@ -246,6 +251,7 @@ void send() {
 	*dptr++ = ((unsigned char *)&bv)[0];
     }
 
+#if 0
     if (imu.haveimu) {
 	if (maxmsglen > 12 + (dptr - data)) {
 	    // magnet x (0x09,0x02)
@@ -284,6 +290,7 @@ void send() {
 	    *dptr++ = ((unsigned char *)&imu.gyro_z)[0];
 	}
     }
+#endif
     int sendStart = millis();
     loramsg(dptr - data, data);
     lastSend = millis();
@@ -352,6 +359,7 @@ void processLoRa(char *buf) {
 	    notice("Link margin: %d\n",gwmargin);
 	}
 	pendingLCR=0;  // Clear the pending LCR
+	newmargin = true;
 	lastLCR = millis();
     } else if (strncmp(buf, "+MSGHEX: No free channel", 24) == 0) {
 	warning("*** No free channel\n");
@@ -365,7 +373,7 @@ void processLoRa(char *buf) {
     } else if (strncmp(buf, "+DR: ",5) == 0) {
 	;  // Ignore
     } else if (strncmp(buf, "+ID: DevAddr, ",14) == 0) {
-	strncpy(devAddr,&buf[14],sizeof(devAddr)+1);
+	strncpy(devAddr,&buf[14],sizeof(devAddr)-1);
 	notice("devAddr=%s\n",devAddr);
     } else if (strncmp(buf, "+LW: ULDL, ",11) == 0) { // +LW: ULDL, 867, 265
 	int nr=sscanf(buf, "+LW: ULDL, %d, %d",&ulcntr, &dlcntr);
@@ -429,7 +437,7 @@ void lorawanloop(void)
 	return;
 
     // Request line update every 60s (or 5s if we haven't heard from the prior attempts)
-    if (millis() - lastLCR > (10+5*pendingLCR)*1000) {
+    if (!msgsending && millis() - lastLCR > (10+5*pendingLCR)*1000) {
 	lorawrite("AT+LW=LCR");
 	pendingLCR++;
 	return;
