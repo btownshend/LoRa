@@ -1,4 +1,4 @@
-#define SEEEDUINO3
+#define SEEEDUINO4
 
 typedef struct {
     // Calibration of magnetometer
@@ -9,11 +9,11 @@ typedef struct {
 
 #ifdef SEEEDUINO4
 // Calibration using MotionCal 5/25/21
-const magCalType defaultMagCal = {
-    {16.79/.15,-.28/.15,0.92/.15},
-    {{1.062,.023,-.021},   // By row, then col
-     {.023,.981,.027},
-     {-.021,.027,.962}}};  //  field=55.43;
+const magCalType defaultMagCal =
+{{160.26,-12.42,7.11},
+{{1.00,0.00,0.00},
+{0.00,1.00,0.00},
+{0.00,0.00,1.00}}}; // Total=266.66
 #endif
 
 #ifdef SEEEDUINO3
