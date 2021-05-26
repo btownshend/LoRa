@@ -250,11 +250,11 @@ float IMU::getHeading(void) {
     // Get current heading in degrees
 
     // roll/pitch in radian
-    double roll = atan2((float)imu.ay, (float)imu.az);
-    double pitch = atan2(-(float)imu.ax, sqrt((float)imu.ay * imu.ay + (float)imu.az * imu.az));
+    double roll = atan2(fay, faz);
+    double pitch = atan2(-fax, sqrt(fay * fay + faz * faz));
 
-    double Xheading = mag_x * cos(pitch) + mag_y * sin(roll) * sin(pitch) + mag_z * cos(roll) * sin(pitch);
-    double Yheading = mag_y * cos(roll) - mag_z * sin(pitch);
+    double Xheading = fmx * cos(pitch) + fmy * sin(roll) * sin(pitch) + fmz * cos(roll) * sin(pitch);
+    double Yheading = fmy * cos(roll) - fmz * sin(pitch);
 
     const double declination = -6;   // Magnetic declination
     float heading = 180 + 57.3 * atan2(Yheading, Xheading) + declination;
@@ -281,9 +281,6 @@ void IMU::loop() {
 	// Updates acc, gyro values from FIFO
 	nsamps++;
 	imu.dmpUpdateFifo();
-
-	// Got new data, save it in ENU orientation
-	float fgx,fgy,fgz,fax,fay,faz,fmx,fmy,fmz;
 
 	imu.update(UPDATE_COMPASS);
 	updateCalibration();

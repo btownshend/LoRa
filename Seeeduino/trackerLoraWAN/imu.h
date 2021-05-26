@@ -7,6 +7,7 @@ class IMU {
     MPU9250_DMP imu;
     Madgwick filter;
     //    Adafruit_NXPSensorFusion filter;
+    float fgx,fgy,fgz,fax,fay,faz,fmx,fmy,fmz;  // Current readings in natural units (Deg/s, g, uT), with axes appropriately adjusted
  public:
     short orient_x, orient_y,orient_z;  // Orientation, updated only when device is not accelerating (other than gravity)
     short mag_x, mag_y, mag_z;
