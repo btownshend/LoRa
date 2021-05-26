@@ -15,10 +15,6 @@ float acc_mag;  // Total magnitude of acceleration
 float acc_external;  // External acceleration
 const float stillaccel = 0.01f;  // External acceleration less than this to be considered still
 
-const float UTPERUNIT=0.15f;
-const float GPERUNIT=16.0/32768;
-const float DPSPERUNIT=2000.0/32768;
-
 
 FlashStorage(calStorage, magCalType);
 static magCalType magCal;
@@ -156,14 +152,6 @@ void IMU::setup() {
 
     // Initialize AHRS filter at 100Hz update rate
     filter.begin(100);
-
-    // Verify constants
-    if (DPSPERUNIT != 1.0/imu.getGyroSens())
-	warning("DPSPERUNIT=%f, but gyro sensitivity=%f\n", DPSPERUNIT, 1.0/imu.getGyroSens());
-    if (GPERUNIT!=1.0/imu.getAccelSens())
-	warning("GPERUNIT=%f, but acc sensitivity=%f\n", GPERUNIT, 1.0/imu.getAccelSens());
-    if (UTPERUNIT!=imu.getMagSens())
-	warning("UTPERUNIT=%f, but mag sensitivity=%f\n", UTPERUNIT, imu.getMagSens());
 }
 
 short IMU::getRawMag(int axis) const {
@@ -286,9 +274,9 @@ void IMU::loop() {
 	updateCalibration();
 	// Assuming the board lays flat on earth, with grove connector at North end, then accel/gyro or ENU and mag is NED
 	// Convert to dimensioned units and align mag with accel,gyro (ENU)
-	fgx=imu.gx*DPSPERUNIT; fgy=imu.gy*DPSPERUNIT; fgz=imu.gz*DPSPERUNIT;
-	fax=imu.ax*GPERUNIT;  fay=imu.ay*GPERUNIT; faz=imu.az*GPERUNIT;
-	fmx=mag_y*UTPERUNIT;  fmy=mag_x*UTPERUNIT; fmz=-mag_z*UTPERUNIT;
+	fgx=imu.calcGyro(imu.gx); fgy=imu.calcGyro(imu.gy); fgz=imu.calcGyro(imu.gz);
+	fax=imu.calcAccel(imu.ax);  fay=imu.calcAccel(imu.ay); faz=imu.calcAccel(imu.az);
+	fmx=imu.calcMag(mag_y);  fmy=imu.calcMag(mag_x); fmz=imu.calcMag(-mag_z);  // Use the calibrated mag values
 	// All 3 now point the same way as accel/gyro, which is ENU when laying flat (N long way toward grove connector)
 #ifndef LAYFLAT
 	// On its side so world x=x, world y=z, world z=-y 
