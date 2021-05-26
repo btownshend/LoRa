@@ -38,9 +38,9 @@ static void NED2ENU(float &x, float &y, float &z) {
 
 static void Flat2Side(float &x, float &y, float &z) {
     // Putting the sensor on its side swaps y,z, negates z
-    float tmp=y;
-    y=z;
-    z=-tmp;
+    float tmp=x;
+    x=-z;
+    z=tmp;
 }
 
 void IMU::setup() {
