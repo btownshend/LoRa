@@ -320,7 +320,11 @@ void IMU::loop() {
 #if defined(LAYFLAT)
 	    notice("Raw:    Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f\n", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
 #endif
-	    notice("Filter: Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f\n", filter.getRoll(), filter.getPitch(), filter.getYaw());
+	    const double declination = -6;   // Magnetic declination
+	    float hd=360-filter.getYaw()+declination;
+	    while (hd>360) hd-=360;
+	    float tilt=acos(cos(filter.getPitch()/57.3)*cos(filter.getRoll()/57.3))*57.3;;
+	    notice("Filter: Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f\n", filter.getRoll(), filter.getPitch(), filter.getYaw(),hd,tilt);
 	    nsamps=0;
 	    nyield=0;
 	    lastdbg = millis();
