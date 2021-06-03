@@ -9,7 +9,6 @@ class IMU {
     //    Adafruit_NXPSensorFusion filter;
     float fgx,fgy,fgz,fax,fay,faz,fmx,fmy,fmz;  // Current readings in natural units (Deg/s, g, uT), with axes appropriately adjusted
  public:
-    short orient_x, orient_y,orient_z;  // Orientation, updated only when device is not accelerating (other than gravity)
     short mag_x, mag_y, mag_z;
     bool haveimu;
 
@@ -19,8 +18,9 @@ class IMU {
     void command(const char *cmd);
     bool isstill(void);
     short getRawMag(int axis) const;
+    float getUpRotation(void);
+    float getTilt(void);
  private:
-    float gettilt(void);
     void monitor(bool);
     void updateCalibration(void);
 };
@@ -29,5 +29,5 @@ extern IMU imu;
 
 inline void imuloop(void) { imu.loop(); }
 
-#define IMUTEST  // Disable all other threads
+//#define IMUTEST  // Disable all other threads
 

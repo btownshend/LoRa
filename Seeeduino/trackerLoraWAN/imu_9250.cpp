@@ -1,3 +1,4 @@
+#include <math.h>
 #include "globals.h"
 #ifdef IMU_9250
 
@@ -20,7 +21,7 @@ FlashStorage(calStorage, magCalType);
 static magCalType magCal;
 IMU imu;
 
-#define LAYFLAT
+//#define LAYFLAT
 #define NWU  // Assume NED or NWU orientation of axes
 
 static void NED2NWU(float &x, float &y, float &z) {
@@ -236,27 +237,33 @@ void IMU::updateCalibration(void) {
 
 float IMU::getHeading(void) {
     // Get current heading in degrees
-
-    // roll/pitch in radian
-    double roll = atan2(fay, faz);
-    double pitch = atan2(-fax, sqrt(fay * fay + faz * faz));
-
-    double Xheading = fmx * cos(pitch) + fmy * sin(roll) * sin(pitch) + fmz * cos(roll) * sin(pitch);
-    double Yheading = fmy * cos(roll) - fmz * sin(pitch);
-
     const double declination = -6;   // Magnetic declination
-    float heading = 180 + 57.3 * atan2(Yheading, Xheading) + declination;
+    float hd=360-filter.getYaw()+declination;
+    while (hd>360) hd-=360;
     
-    return heading;
+    return hd;
 }
 
 bool IMU::isstill(void) {
     return acc_external < stillaccel;
 }
 
-float IMU::gettilt(void) {
-    float xymag=sqrt(1.0f*orient_x*orient_x+1.0f*orient_y*orient_y);
-    return atan2(xymag,1.0f*orient_z)*57.3;
+float IMU::getTilt(void) {
+    float  z=cos(filter.getPitchRadians())*cos(filter.getRollRadians());
+    float tilt=acos(z)*57.3;;
+    return tilt;
+}
+
+// Get position of compass face pointing up when the device is tilted up
+// e.g. 90deg -> East is up
+float IMU::getUpRotation(void) {
+    float x=sin(filter.getPitchRadians());
+    float y=cos(filter.getPitchRadians())*sin(filter.getRollRadians());
+
+    float rot = -atan2(x,y)*57.3;
+    while (rot<0)
+	rot+=360;
+    return rot;
 }
 
 void IMU::loop() {
@@ -301,9 +308,6 @@ void IMU::loop() {
 	meanmag=meanmag*0.999+acc_mag*.001;
 	acc_external = fabs(acc_mag-meanmag);
 
-	if (isstill()) {
-	    orient_x=imu.ax;orient_y=imu.ay;orient_z=imu.az;
-	}
     
 	static unsigned long lastdbg = 0;
 #ifdef IMUTEST
@@ -315,16 +319,12 @@ void IMU::loop() {
 	    notice("   a=[%4d,%4d,%4d]; g=[%d,%d,%d]; m=[%d,%d,%d], raw=[%d,%d,%d]\n", imu.ax, imu.ay, imu.az,  imu.gx, imu.gy, imu.gz, mag_x, mag_y, mag_z,imu.mx,imu.my,imu.mz);
 	    notice("   a=[%4.2f,%4.2f,%4.2f] (mean:%.2f g); g=[%.1f,%.1f,%.1f] d/s; m=[%.1f,%.1f,%.1f]=%.1f uT, rate=%.0f Hz [Y=%d,S=%d]\n",
 		   fax,fay,faz,acc_mag,fgx,fgy,fgz,fmx,fmy,fmz,field,nsamps*1000.0f/(millis()-lastdbg),nyield,nsamps);
-	    imu.computeEulerAngles(true);
-	    // Note that pitch,roll, and yaw are defined as CW around the corresponding axes (in this 
 #if defined(LAYFLAT)
-	    notice("Raw:    Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f\n", imu.roll,imu.pitch,imu.yaw,getHeading(),gettilt());
+	    // Note that pitch,roll, and yaw are defined as CW around the corresponding axes (in this 
+	    imu.computeEulerAngles(true);
+	    notice("IMU:    Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f\n", imu.roll,imu.pitch,imu.yaw);
 #endif
-	    const double declination = -6;   // Magnetic declination
-	    float hd=360-filter.getYaw()+declination;
-	    while (hd>360) hd-=360;
-	    float tilt=acos(cos(filter.getPitch()/57.3)*cos(filter.getRoll()/57.3))*57.3;;
-	    notice("Filter: Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f\n", filter.getRoll(), filter.getPitch(), filter.getYaw(),hd,tilt);
+	    notice("Filter: Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f, UpRotation: %.0f\n", filter.getRoll(), filter.getPitch(), filter.getYaw(),getHeading(),getTilt(),getUpRotation());
 	    nsamps=0;
 	    nyield=0;
 	    lastdbg = millis();
@@ -333,7 +333,7 @@ void IMU::loop() {
 	// Check for new tap data by polling tapAvailable
 	if ( imu.tapAvailable() )   {
 	    notice("Tap %d, %d\n",imu.getTapDir(), imu.getTapCount());
-	    uitap(gettilt());
+	    uitap(getTilt());
 	}
     }
 

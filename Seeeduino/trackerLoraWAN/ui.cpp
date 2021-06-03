@@ -15,9 +15,7 @@ bool uiactive(void) {
 int getuisetting(void) {
     static int currsetting = 0;  // Keep a persistent value
     // Can update if the device is still
-    int rotation = -(int)(atan2(imu.orient_y,imu.orient_x)*57.3);
-    while (rotation<0)
-	rotation+=360;
+    int rotation = (int)imu.getUpRotation();
     int rotdiff=(currsetting*spacing-rotation+360)%360;
     if (rotdiff>40) { // Has some hysteresis
 	// Quantize to spacing deg so it clicks
