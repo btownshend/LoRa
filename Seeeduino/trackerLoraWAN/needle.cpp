@@ -91,10 +91,6 @@ void Needle::adjuststepper(void) {
     if (spinning>0 || fieldtesting) {
 	return;  // No adjustments while spinning
     }
-    if (!imu.isstill())
-	// Unit accelerating, no update
-	return;
-    
     if (uiactive()) {
 	gotoangle(getuipos());
     } else {

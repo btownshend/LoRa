@@ -244,10 +244,6 @@ float IMU::getHeading(void) {
     return hd;
 }
 
-bool IMU::isstill(void) {
-    return acc_external < stillaccel;
-}
-
 float IMU::getTilt(void) {
     float  z=cos(filter.getPitchRadians())*cos(filter.getRollRadians());
     float tilt=acos(z)*57.3;;
