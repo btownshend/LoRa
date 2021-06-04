@@ -32,7 +32,7 @@ void Needle::setuptimer(void)
 #endif  // USEINTERRUPTS
 
 Needle::Needle(void):  stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2,PIN_STEPPER3,PIN_STEPPER4,true) {
-    spinning=0;
+    spinning=2;  // 2 revs at startup to find needle pos
     fieldtesting=false;
     enabled=true; // To match stepper state
     for (int i=0;i<360;i++)
