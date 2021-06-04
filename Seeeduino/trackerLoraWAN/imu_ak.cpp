@@ -114,8 +114,7 @@ bool updateMag(void) {
     static float scale_x = 1, scale_y = 1, scale_z = 1;
     static int offset_x = 0, offset_y = 0, offset_z = 0;
     if (changed) {
-	sprintf(fmtbuf, "New mag range: [%d,%d]; [%d,%d]; [%d,%d]", mag_xmin, mag_xmax, mag_ymin, mag_ymax, mag_zmin, mag_zmax);
-	SerialUSB.println(fmtbuf);
+	notice("New mag range: [%d,%d]; [%d,%d]; [%d,%d]\n", mag_xmin, mag_xmax, mag_ymin, mag_ymax, mag_zmin, mag_zmax);
 	offset_x = (mag_xmax + mag_xmin) / 2;
 	offset_y = (mag_ymax + mag_ymin) / 2;
 	offset_z = (mag_zmax + mag_zmin) / 2;
@@ -129,8 +128,7 @@ bool updateMag(void) {
 	scale_x = avg_delta / avg_delta_x;
 	scale_y = avg_delta / avg_delta_y;
 	scale_z = avg_delta / avg_delta_z;
-	sprintf(fmtbuf, "Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
-	SerialUSB.println(fmtbuf);
+	notice("Offset=%d,%d,%d Scale=%.2f,%.2f,%.2f\n", offset_x, offset_y, offset_z, scale_x, scale_y, scale_z);
     }
     if (magCal.offset[0]==0.0) {
 	// internal calibration
@@ -148,8 +146,7 @@ bool updateMag(void) {
 	mag_z = (short)(c[0]*magCal.mat[0][2]+c[1]*magCal.mat[1][2]+c[2]*magCal.mat[2][2]);
 	static unsigned long lastdebug=0;
 	if (millis()-lastdebug>5000) {
-	    sprintf(fmtbuf,"raw=[%d,%d,%d], calib=[%d,%d,%d]",rawmag_x,rawmag_y,rawmag_z,mag_x,mag_y,mag_z);
-	    SerialUSB.println(fmtbuf);
+	    notice("raw=[%d,%d,%d], calib=[%d,%d,%d]\n",rawmag_x,rawmag_y,rawmag_z,mag_x,mag_y,mag_z);
 	    lastdebug=millis();
 	}
     }

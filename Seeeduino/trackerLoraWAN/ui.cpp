@@ -21,8 +21,7 @@ int getuisetting(void) {
 	// Quantize to spacing deg so it clicks
 	int newsetting = (int((rotation+(spacing/2.0))/spacing))%8;
 	if (newsetting!=currsetting) {
-	    sprintf(fmtbuf,"UI setting %d -> %d", currsetting, newsetting);
-	    SerialUSB.println(fmtbuf);
+	    notice("UI setting %d -> %d\n", currsetting, newsetting);
 	    currsetting=newsetting;
 	}
     }
@@ -37,20 +36,18 @@ void uitap(float tilt) {
 	if (uimode==UI_INACTIVE) {
 	    uimode=UI_STARTING;
 	    lastChange=millis();
-	    SerialUSB.println("UI: Starting");
+	    notice("UI: Starting\n");
 	} else if (uimode==UI_ACTIVE) {
 	    selected=getuisetting();
-	    SerialUSB.print("UI: Selected ");
-	    SerialUSB.println(selected);
+	    notice("UI: Selected %d\n",selected);
 	    uimode=UI_SELECTED;
 	    lastChange=millis();
 	}
     } else if (uimode!=UI_INACTIVE && tilt<45) {
-	SerialUSB.println("UI: Inactive");
+	notice("UI: Inactive\n");
 	uimode=UI_INACTIVE;
     } else {
-	SerialUSB.print("UI: Ignored tap, tilt=");
-	SerialUSB.println(tilt);
+	notice("UI: Ignored tap, tilt=%.0f",tilt);
     }
 }
 
@@ -58,11 +55,11 @@ void uitap(float tilt) {
 // Get current position to point arrow (0-360, 0=north indicator on dial)
 int getuipos(void) {
     if (uimode==UI_STARTING && (millis()-lastChange > 5000)) {
-	SerialUSB.println("UI: Starting->Active");
+	notice("UI: Starting->Active\n");
 	uimode=UI_ACTIVE;
     }
     if (uimode==UI_SELECTED && (millis()-lastChange > 2000)) {
-	SerialUSB.println("UI: Selected->Active");
+	notice("UI: Selected->Active\n");
 	uimode=UI_ACTIVE;
     }
     if (uimode==UI_STARTING) 
