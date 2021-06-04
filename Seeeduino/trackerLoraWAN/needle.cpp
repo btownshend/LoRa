@@ -75,8 +75,11 @@ void Needle::moveTo(long absolute) {
 void Needle::gotoangle(float angle) {
     int newpos = (int)(angle * STEPSPERREV / 360);
     int curpos = stepper.currentPosition();
-    int change = newpos  - curpos;
-    change = (change + STEPSPERREV / 2) % STEPSPERREV - STEPSPERREV / 2;
+    int change = newpos%STEPSPERREV  - curpos%STEPSPERREV;
+    change = (change + STEPSPERREV*5/ 2) % STEPSPERREV - STEPSPERREV / 2;
+    if (change<-STEPSPERREV/2 || change>STEPSPERREV/2)
+	warning("gotoangle: change=%d; newpos=%d, curpos=%d\n",change,newpos,curpos);
+
     //sprintf(fmtbuf,"cur=%d, new=%d, change=%d",curpos, newpos, change);
     //Serial.println(fmtbuf);
     if (abs(change)>(stepper.isRunning()?0:4))  // Only start it moving is the required change is significant
