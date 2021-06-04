@@ -12,11 +12,6 @@
 #include "imucal.h"
 
 // 9DOF
-float acc_mag;  // Total magnitude of acceleration
-float acc_external;  // External acceleration
-const float stillaccel = 0.01f;  // External acceleration less than this to be considered still
-
-
 FlashStorage(calStorage, magCalType);
 static magCalType magCal;
 IMU imu;
@@ -298,12 +293,6 @@ void IMU::loop() {
 	    // Skip compass reading, free-run the filter
 	    filter.updateIMU(fgx,fgy,fgz,fax,fay,faz);
 #endif
-
-	acc_mag = sqrt(fax*fax+fay*fay+faz*faz);
-	static float meanmag=1.0f;
-	meanmag=meanmag*0.999+acc_mag*.001;
-	acc_external = fabs(acc_mag-meanmag);
-
     
 	static unsigned long lastdbg = 0;
 #ifdef IMUTEST
@@ -312,6 +301,7 @@ void IMU::loop() {
 	if (millis() - lastdbg > 10000 ) {
 #endif
 	    float field = sqrt(fmx * fmx + fmy * fmy + fmz * fmz);
+	    float acc_mag = sqrt(fax*fax+fay*fay+faz*faz); 	;  // Total magnitude of acceleration
 	    notice("   a=[%4d,%4d,%4d]; g=[%d,%d,%d]; m=[%d,%d,%d], raw=[%d,%d,%d]\n", imu.ax, imu.ay, imu.az,  imu.gx, imu.gy, imu.gz, mag_x, mag_y, mag_z,imu.mx,imu.my,imu.mz);
 	    notice("   a=[%4.2f,%4.2f,%4.2f] (mean:%.2f g); g=[%.1f,%.1f,%.1f] d/s; m=[%.1f,%.1f,%.1f]=%.1f uT, rate=%.0f Hz [Y=%d,S=%d]\n",
 		   fax,fay,faz,acc_mag,fgx,fgy,fgz,fmx,fmy,fmz,field,nsamps*1000.0f/(millis()-lastdbg),nyield,nsamps);
