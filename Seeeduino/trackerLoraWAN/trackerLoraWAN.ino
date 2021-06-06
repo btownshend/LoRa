@@ -30,6 +30,8 @@ void cmdexec(char *buf) {
        imu.command(buf+1);
   else if (buf[0]=='N')
        needle.command(buf+1);
+  else if (buf[0]=='T')
+       targetcommand(buf+1);
 #ifdef EXTERNALBLE
   else if (buf[0]=='B')
       blecommand(buf+1);

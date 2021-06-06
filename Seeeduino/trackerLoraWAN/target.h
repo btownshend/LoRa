@@ -9,6 +9,7 @@ class Target {
     int getAge(void) { return (int)(now()-lastfix); } // Get age of last fix in seconds
     float getDistance(void);  // Get distance from our current position to this target in meters
     float getHeading(void);  // Get heading from our position to the target
+    void dump();   // Dump value to stdout
 };
 
 #define MAXTARGETS 10
@@ -17,3 +18,4 @@ extern int currentTarget;
 extern Target targets[];
 
 extern void initTargets(void);
+extern void targetcommand(const char *cmd);
