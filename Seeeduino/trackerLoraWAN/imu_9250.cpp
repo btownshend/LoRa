@@ -232,8 +232,9 @@ void IMU::updateCalibration(void) {
 
 float IMU::getHeading(void) {
     // Get current heading in degrees
-    const double declination = -6;   // Magnetic declination
-    float hd=360-filter.getYaw()+declination;
+    const float declination = -6;   // Magnetic declination
+    const float correction = 110;   // Adjustment to have needle point in correct direction (why?)
+    float hd=360-filter.getYaw()+declination+correction;
     while (hd>360) hd-=360;
     
     return hd;
