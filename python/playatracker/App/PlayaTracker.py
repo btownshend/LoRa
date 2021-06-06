@@ -124,7 +124,7 @@ class PlayaTracker:
         self.client = mqtt.Client()
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
-        self.client.connect("192.168.0.246", 1883, 60)
+        self.client.connect("192.168.0.189", 1883, 60)
         print('initMQTT done')
 
 
