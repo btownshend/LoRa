@@ -6,6 +6,7 @@
 #include "needle.h"
 #include "imu.h"
 #include "ui.h"
+#include "target.h"
 
 #define USEINTERRUPTS
 
@@ -99,11 +100,11 @@ void Needle::adjuststepper(void) {
     } else {
 	// Adjust stepper accordinly
 	static float priorHeading = 0;
-	float heading = imu.getHeading();
+	float heading = targets[currentTarget].getHeading()-imu.getHeading();  // Heading on compass that needle should point
     
 	if (abs(heading-priorHeading)>=5)  {
 	    priorHeading=heading;
-	    gotoangle(-heading);
+	    gotoangle(heading);
 	}
     }
 }
