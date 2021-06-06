@@ -6,6 +6,7 @@
 #include "imu.h"
 #include "gps.h"
 #include "ble.h"
+#include "target.h"
 
 #ifdef EXTERNALBLE
 //#define LORABLE  // Send LoRa debug messages to BLE
@@ -224,6 +225,12 @@ void send() {
 	    *dptr++ = ((unsigned char *)&alt)[1];
 	    *dptr++ = ((unsigned char *)&alt)[0];
 	}
+    }
+
+    if (maxmsglen > 3 + (dptr-data)) {
+	// Current tracking destination
+	*dptr++ = 0x01; *dptr++ = 0x99; // Destination
+	*dptr++ = currentTarget;
     }
 
     if (maxmsglen > 6 + (dptr - data)) {

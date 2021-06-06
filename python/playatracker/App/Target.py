@@ -30,6 +30,8 @@ class Target:
 
     def getfield(self,field):
         return self.lastmsg[field]
+        if 'tracking' in obj:
+            self.tracking = obj['tracking']
 
     # noinspection PyPep8Naming
     def sendreply(self):

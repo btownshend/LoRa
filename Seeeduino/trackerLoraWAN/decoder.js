@@ -102,6 +102,10 @@ function rakSensorDataDecode(hexStr) {
 	myObj.battery_voltage = parseFloat((parseShort(str.substring(6, 10), 16) * 0.001).toFixed(3));// + "V";
 	str = str.substring(10);
 	break;
+    case 0x0199:  // Tracking
+	myObj.tracking = parseShort(str.substring(4,6),16);
+	str = str.substring(6);
+	break;
       default:
         str = str.substring(7);
         break;
