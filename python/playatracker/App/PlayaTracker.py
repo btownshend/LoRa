@@ -118,7 +118,7 @@ class PlayaTracker:
             print(f"Unrecognized topic: {msg.topic}")
             collection = self.db.other
         result = collection.insert_one(j)
-        print(f"{msg.topic} inserted into {collection.name}")
+        # print(f"{msg.topic} inserted into {collection.name}")
 
     def initMQTT(self):
         self.client = mqtt.Client()
