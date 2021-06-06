@@ -454,7 +454,7 @@ void lorawanloop(void)
 	return;
 
     // Request line update every 60s (or 5s if we haven't heard from the prior attempts)
-    if (!msgsending && millis() - lastLCR > (10+5*pendingLCR)*1000) {
+    if (!msgsending && millis() - lastLCR > (60+5*pendingLCR)*1000) {
 	lorawrite("AT+LW=LCR");
 	pendingLCR++;
 	return;
