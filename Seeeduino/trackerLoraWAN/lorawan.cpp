@@ -304,8 +304,17 @@ void send() {
     trace("Send took %d msec\n", lastSend - sendStart);
 }
 
-void processMessage(int n, unsigned char *data) {
-    notice("processMessage(%d,0x%02x...)\n", n, data[0]);
+void processMessage(int port, int n, unsigned char *data) {
+    notice("processMessage(%d,%d,0x%02x...)\n", port, n, data[0]);
+    if (port==1) {
+	int target=data[0];
+	if (target<1 || target>=MAXTARGETS)
+	    warning("Received message with bad target: %d", target);
+	else
+	    targets[target].processMessage(n-1,&data[1]);
+    } else {
+	warning("Received message with unexpected port: %d", port);
+    }
 }
 
 void processLoRa(char *buf) {
@@ -320,8 +329,9 @@ void processLoRa(char *buf) {
 	else {
 	    notice("Len=%d, RSSI=%d, SNR=%d\n", len, rssi, snr);
 	}
-    } else if (strncmp(buf, "+MSGHEX: PORT: 1; RX: \"", 23) == 0) {
-	char *ptr = &buf[23];
+    } else if (strncmp(buf, "+MSGHEX: PORT:", 14) == 0) {
+	int port = atoi(&buf[14]);
+	char *ptr = strchr(buf, '"')+1;
 	static unsigned char data[100];
 	unsigned int n = 0;
 	for (; n < sizeof(data) && *ptr != '"' && *ptr && ptr[1]; n++, ptr += 2) {
@@ -331,7 +341,7 @@ void processLoRa(char *buf) {
 	    sscanf(tmp, "%2hx", &v);
 	    data[n] = v;
 	}
-	processMessage(n, data);
+	processMessage(port, n, data);
     } else if (strcmp(buf, "+TEST: RXLRPKT") == 0) {
 	;  // Ignore
     } else if (strncmp(buf, "+LOG", 4) == 0) {

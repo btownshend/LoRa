@@ -9,6 +9,7 @@ class Target {
     int getAge(void) { return (int)(now()-lastfix); } // Get age of last fix in seconds
     float getDistance(void);  // Get distance from our current position to this target in meters
     float getHeading(void);  // Get heading from our position to the target
+    void processMessage(int n, unsigned char *data);   // Process message from gateway
     void dump();   // Dump value to stdout
 };
 

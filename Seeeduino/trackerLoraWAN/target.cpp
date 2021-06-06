@@ -1,5 +1,6 @@
 #include "target.h"
 #include "gps.h"
+#include "log.h"
 
 int currentTarget = 0;
 Target targets[MAXTARGETS];
@@ -21,6 +22,30 @@ float Target::getHeading(void) {  // Get heading from our position to the target
     gps.f_get_position(&mylat, &mylong);
     return gps.course_to(mylat,mylong,lat,lon);
 }
+
+static int parse3(unsigned char *buf) {
+    int val=buf[0]<<16|buf[1]<<8|buf[2];
+    val=(val<<8)>>8;
+    return val;
+}
+
+static unsigned short parse2(unsigned char *buf) {
+    unsigned short val=buf[0]<<8|buf[1];
+    return val;
+}
+
+void Target::processMessage(int n, unsigned char *data) {   // Process message from gateway
+    if (n!=8) {
+	warning("Target update message with 1+%d bytes\n",n);
+	return;
+    }
+    lat=parse3(&data[0])/10000.0;
+    lon=parse3(&data[3])/10000.0;
+    int age=parse2(&data[6]);
+    lastfix=now()-age;
+    notice("Updated target to (%.4f,%.4f) age %d\n", lat, lon, age);
+}
+
 void Target::dump() {
     printf("%.4f,%.4f %d sec;  H=%.0f, D=%.0f\n", lat, lon, now()-lastfix,getHeading(),getDistance());
 }
