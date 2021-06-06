@@ -1,37 +1,47 @@
 # noinspection PyPep8Naming
 from datetime import datetime
 
+
 def parseTime(s):
     # Parse a time of the format "2021-05-24T04:00:12.377589Z"
-    d=datetime.strptime(s,"%Y-%m-%dT%H:%M:%S.%fZ")
+    d = datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%fZ")
     return d
 
+
 class Target:
-    def __init__(self, devEUI):
+    def __init__(self, pt, devEUI):
+        self.tracker = pt
         self.devEUI = devEUI
-        self.lastmsg = None
+        self.lastmsgtime = None
         self.lastloc = None
         self.nupdates = 0
+        self.tracking = 0
+        self.rxInfo = None
+        self.txInfo = None
+        self.fCnt = 0
+        self.deviceName = "?"
+        self.replyInterval = 2  # How many frames received between location replies
+        self.unitNumber = None
 
     def update(self, msg):
         # Update state using JSON message
-        self.lastmsg = msg
         self.nupdates += 1
-        print(f"update {self.devEUI}: lastmsg={self.lastmsg}")
+        print(f"update {self.devEUI}: msg={msg}")
+        self.rxInfo = msg['rxInfo'][0]
+        self.txInfo = msg['txInfo']
+        self.fCnt = msg['fCnt']
+        self.deviceName = msg['deviceName']
+        self.unitNumber = int(self.deviceName[-1])  # Last digit of deviceName
+        # print(f"rxInfo={self.rxInfo}")
+        self.lastmsgtime = parseTime(self.rxInfo['time'])
         obj = msg['object']
         if 'latitude' in obj:
+            self.lastloc = obj['latitude'], obj['longitude'], self.lastmsgtime,
             print(f"lastloc={self.lastloc}")
-            rxinfo = msg['rxInfo'][0]
-            obj = msg['object']
-            self.lastloc = obj['latitude'], obj['longitude'], parseTime(rxinfo['time']),
-
-    def getmsg(self):
-        return self.lastmsg
-
-    def getfield(self,field):
-        return self.lastmsg[field]
         if 'tracking' in obj:
             self.tracking = obj['tracking']
+        if self.lastloc is not None and self.fCnt % self.replyInterval == 0:  # Only queue up when we get a new frame to avoid a backlog
+            self.sendreply()
 
     # noinspection PyPep8Naming
     def sendreply(self):
@@ -71,11 +81,10 @@ class Target:
 
     def getGatewayLocation(self):
         # Get gateway location using rxInfo
-        if self.lastmsg is None:
+        if self.rxInfo is None:
             return None, None, None,
-        rxinfo = self.lastmsg['rxInfo'][0]
-        loc = rxinfo['location']
-        return loc['latitude'], loc['longitude'], parseTime(rxinfo['time']),
+        loc = self.rxInfo['location']
+        return loc['latitude'], loc['longitude'], parseTime(self.rxInfo['time']),
 
     def getLocation(self):
         # Retrieve location tuple (lat,long,time of last fix)
