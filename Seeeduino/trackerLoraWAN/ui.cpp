@@ -1,6 +1,7 @@
 #include "globals.h"
 #include "ui.h"
 #include "imu.h"
+#include "target.h"
 
 enum  { UI_INACTIVE, UI_STARTING, UI_ACTIVE, UI_SELECTED } uimode;
 static unsigned long lastChange=0;
@@ -40,6 +41,10 @@ void uitap(float tilt) {
 	} else if (uimode==UI_ACTIVE) {
 	    selected=getuisetting();
 	    notice("UI: Selected %d\n",selected);
+	    if (selected >= 0 && selected<=numTargets)
+		currentTarget=selected;
+	    else
+		warning("Bad target selected: %d",selected);
 	    uimode=UI_SELECTED;
 	    lastChange=millis();
 	}
