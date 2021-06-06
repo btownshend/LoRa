@@ -90,6 +90,9 @@ class PlayaTracker:
             except json.JSONDecodeError as ex:
                 print(f"{msg.topic} not JSON")
                 return
+            except UnicodeDecodeError as ex:
+                print(f"{msg.topic} not unicode")
+                return
         j['topic'] = msg.topic
 
         if mqtt.topic_matches_sub('application/2/device/+/rx', msg.topic):
