@@ -320,7 +320,7 @@ void IMU::loop() {
 	// Check for new tap data by polling tapAvailable
 	if ( imu.tapAvailable() )   {
 	    notice("Tap %d, %d\n",imu.getTapDir(), imu.getTapCount());
-	    uitap(getTilt());
+	    uitap();
 	}
     }
 

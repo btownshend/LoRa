@@ -8,6 +8,17 @@ static unsigned long lastChange=0;
 static int selected = -1;
 const int spacing = 45;  // Angle between settings
 
+void uiupdatestate(void) {
+    if (uimode==UI_STARTING && (millis()-lastChange > 5000)) {
+	notice("UI: Starting->Active\n");
+	uimode=UI_ACTIVE;
+    }
+    if (uimode==UI_SELECTED && (millis()-lastChange > 2000)) {
+	notice("UI: Selected->Active\n");
+	uimode=UI_ACTIVE;
+    }
+}
+
 bool uiactive(void) {
     return uimode!=UI_INACTIVE;
 }
@@ -31,8 +42,9 @@ int getuisetting(void) {
 
 // Register a tap in the UI with the device oriented with given tilt
 // Can also retrieve overall position (acc_*) from imu
-void uitap(float tilt) {
-    notice("uitap(%f)\n",tilt);
+void uitap() {
+    float tilt=imu.getTilt();
+    notice("uitap: tilt=%.0f\n",tilt);
     if (tilt>70 && tilt<110) {
 	if (uimode==UI_INACTIVE) {
 	    uimode=UI_STARTING;
@@ -59,14 +71,6 @@ void uitap(float tilt) {
 
 // Get current position to point arrow (0-360, 0=north indicator on dial)
 int getuipos(void) {
-    if (uimode==UI_STARTING && (millis()-lastChange > 5000)) {
-	notice("UI: Starting->Active\n");
-	uimode=UI_ACTIVE;
-    }
-    if (uimode==UI_SELECTED && (millis()-lastChange > 2000)) {
-	notice("UI: Selected->Active\n");
-	uimode=UI_ACTIVE;
-    }
     if (uimode==UI_STARTING) 
 	return (millis()-lastChange)*36/500;
     else if (uimode==UI_SELECTED)

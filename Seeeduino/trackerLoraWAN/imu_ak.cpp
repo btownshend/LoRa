@@ -184,7 +184,7 @@ void detectGestures() {
 	// New tap
 	sprintf(fmtbuf,"TAP: acc=%.1f, nstill=%d, tilt=%.0f",external, nstill, tilt);
 	SerialUSB.println(fmtbuf);
-	uitap(tilt);
+	uitap();
     }
 
     if (external<stillaccel) {
