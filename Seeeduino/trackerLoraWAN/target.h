@@ -13,9 +13,11 @@ class Target {
     void dump();   // Dump value to stdout
 };
 
-#define MAXTARGETS 10
+#define MAXTARGETS 8
+
 
 extern int currentTarget;
+extern int numTargets;
 extern Target targets[];
 
 extern void initTargets(void);
