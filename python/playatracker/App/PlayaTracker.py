@@ -1,16 +1,18 @@
 # !/usr/bin/python
-import sys
+import base64
 import json
+import sys
 
 import paho.mqtt.client as mqtt
 from pymongo import MongoClient
+from datetime import datetime
 
 from GUI import gui, app
 from Target import targets, Target
 
 
 class PlayaTracker:
-    def __init__(self):
+    def __init__(self, appID):
         super().__init__()
         self.on_message_gateway_event = None
         self.uartrx = ""
@@ -19,6 +21,7 @@ class PlayaTracker:
         self.mqttdata = None
         self.gwloc = None  # Location of gateway
         self.targetMap = []  # Map from target index (1..7) to devEUI
+        self.appID = appID
         self.initMongo()
         self.initMQTT()
 
@@ -34,12 +37,23 @@ class PlayaTracker:
         self.mqttdata = self.db.mqttdata
         print(self.mqttdata)
 
+    def sendmessage(self, devEUI, fPort, payload, confirmed=False):
+        topic = f"application/{self.appID}/device/{devEUI}/tx"
+        msg = {'confirmed': confirmed, 'fPort': fPort, 'data': base64.b64encode(payload).decode('utf-8') }
+        payload = json.dumps(msg)
+        print(f"sendmessage: topic={topic}, payload={payload}")
+        (rc,mid)=self.client.publish(topic, payload=payload)
+        if rc!= mqtt.MQTT_ERR_SUCCESS:
+            print(f"Error sending message to {topic}: {rc}")
+        else:
+            print(f"sent message with mid={mid}")
+
     def rxmessage(self, msg):
         # Update current location of device, and what it is tracking (if any)
         devEUI = msg['devEUI']
         if devEUI not in targets:
             print(f"Adding new devEUI: {devEUI}")
-            targets[devEUI] = Target(devEUI)
+            targets[devEUI] = Target(self, devEUI)
         targets[devEUI].update(msg)
         gui.trigger.emit()
 
@@ -81,6 +95,9 @@ class PlayaTracker:
         if mqtt.topic_matches_sub('application/2/device/+/rx', msg.topic):
             self.rxmessage(j)
             collection = self.db.rx
+        elif mqtt.topic_matches_sub('application/2/device/+/tx', msg.topic):
+            print("Ignore tx message")
+            return
         elif mqtt.topic_matches_sub('application/2/device/+/status', msg.topic):
             collection = self.db.status
         elif mqtt.topic_matches_sub('gateway/+/event/stats', msg.topic):
@@ -109,7 +126,7 @@ class PlayaTracker:
 
 
 def main():
-    pt = PlayaTracker()
+    pt = PlayaTracker(2)
     pt.start()
     sys.exit(app.exec_())
 
