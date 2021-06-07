@@ -131,6 +131,18 @@ class PlayaTracker:
 def main():
     pt = PlayaTracker(2)
     pt.start()
+    # Dummy target for testing
+    t=Target(pt,'0006')
+    t.deviceName='Draegers6'
+    t.unitNumber=6
+    t.lastloc=(37.44923074007064, -122.18554323830544, datetime.utcnow())
+    targets['draegers']=t
+    t=Target(pt,'0007')
+    t.deviceName='Creek7'
+    t.unitNumber=7
+    t.lastloc=(37.443464, -122.175126, datetime.utcnow())
+    targets['creek']=t
+
     sys.exit(app.exec_())
 
 
