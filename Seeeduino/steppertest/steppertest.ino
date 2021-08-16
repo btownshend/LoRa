@@ -1,13 +1,28 @@
 #include <SAMDTimerInterrupt.h>
 #include <AccelStepper.h>
 
+#define PROTOBOARD 1
+// #define SEEDUINOBOARD 1
+
 // Define a stepper and the pins it will use
+#ifdef SEEDUINOBOARD
 AccelStepper stepper; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
+const int SENSORPIN = A0;
+#endif
+
+#ifdef PROTOBOARD
+#define MOTOR_1A 12
+#define MOTOR_1B 10
+#define MOTOR_2A 11
+#define MOTOR_2B 5
+AccelStepper stepper(AccelStepper::FULL4WIRE, MOTOR_1A,MOTOR_1B,MOTOR_2B,MOTOR_2A);
+const int SENSORPIN = 17;
+#endif
+
 #define USEINTERRUPTS
 
 
 const int STEPSPERREV = 720;
-const int SENSORPIN = A0;
 char fmtbuf[100];
 unsigned long nintr=0;
 
@@ -35,7 +50,7 @@ void setuptimer()
 
 void setup()
 {
-    Serial.begin(115200);
+    SerialUSB.begin(115200);
     delay(2000);
     SerialUSB.println("steppertest");
     

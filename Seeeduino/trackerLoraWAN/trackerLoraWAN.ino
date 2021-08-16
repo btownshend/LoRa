@@ -9,14 +9,23 @@
 #include "loadmonitor.h"
 #include "target.h"
 
-// Add Serial3 using SERCOM2
 #include "wiring_private.h" // pinPeripheral() function
 
-Uart Serial3( &sercom2, PIN_SERIAL3_RX, PIN_SERIAL3_TX, SERCOM_RX_PAD_3, UART_TX_PAD_2 ) ;
-
+#ifdef SEEEDUINOBOARD
+// Add SerialExt using SERCOM2
+Uart SerialExt( &sercom2, PIN_SERIALEXT_RX, PIN_SERIALEXT_TX, SERCOM_RX_PAD_3, UART_TX_PAD_2 ) ;
 void SERCOM2_Handler() {
-  Serial3.IrqHandler();
+  SerialExt.IrqHandler();
 }
+#endif
+#ifdef PROTOBOARD
+// Add SerialExt using SERCOM4 (Grove connector)
+Uart SerialExt( &sercom4, PIN_SERIALEXT_RX, PIN_SERIALEXT_TX, SERCOM_RX_PAD_3, UART_TX_PAD_2 ) ;
+void SERCOM4_Handler() {
+  SerialExt.IrqHandler();
+}
+#endif
+
 
 char fmtbuf[200]; // Space to build formatted strings
 
@@ -126,10 +135,10 @@ void setup(void) {
   batterysetup();
   lorawansetup();
 
-    // Change PA14,PA15 to SERCOM (mode C) (AFTER Serial3.begin)
-  pinPeripheral(PIN_SERIAL3_RX, PIO_SERCOM);
-  pinPeripheral(PIN_SERIAL3_TX, PIO_SERCOM);
-  
+  // Change SerialExt pins to SERCOM (mode C) (AFTER SerialExt.begin)
+  pinPeripheral(PIN_SERIALEXT_RX, PIO_SERCOM);
+  pinPeripheral(PIN_SERIALEXT_TX, PIO_SERCOM);
+
   initTargets();
   
   if (imu.haveimu)
