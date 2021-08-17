@@ -1,12 +1,12 @@
 // Define a stepper and the pins it will use
 #include <Scheduler.h>
-#include <SAMDTimerInterrupt.h>
 
 #include "globals.h"
 #include "needle.h"
 #include "imu.h"
 #include "ui.h"
 #include "target.h"
+#include <SAMDTimerInterrupt.h>
 
 #define USEINTERRUPTS
 
