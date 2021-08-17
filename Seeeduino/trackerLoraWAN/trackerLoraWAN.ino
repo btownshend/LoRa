@@ -30,22 +30,22 @@ void SERCOM4_Handler() {
 char fmtbuf[200]; // Space to build formatted strings
 
 void cmdexec(char *buf) {
-    notice("Exec: %s\n", buf);
+  notice("Exec: %s\n", buf);
   if (buf[0] == 'L')
-      lorawanusercommand(buf+1);
+    lorawanusercommand(buf + 1);
   else if (buf[0] == 'G')
-      gpsusercommand(buf+1);
-  else if (buf[0]=='I')
-       imu.command(buf+1);
-  else if (buf[0]=='N')
-       needle.command(buf+1);
-  else if (buf[0]=='T')
-       targetcommand(buf+1);
+    gpsusercommand(buf + 1);
+  else if (buf[0] == 'I')
+    imu.command(buf + 1);
+  else if (buf[0] == 'N')
+    needle.command(buf + 1);
+  else if (buf[0] == 'T')
+    targetcommand(buf + 1);
 #ifdef EXTERNALBLE
-  else if (buf[0]=='B')
-      blecommand(buf+1);
+  else if (buf[0] == 'B')
+    blecommand(buf + 1);
 #endif
- else
+  else
     SerialUSB.println("Expected (L)ora, (G)PS, (I)MU, (N)eedle or (B)LE command");
 }
 
@@ -68,46 +68,46 @@ void cmdread(void) {
 }
 
 unsigned int stackcheck(const char *module, unsigned int minstack) {
-    // Check amount of stack space remaining
-    if (Scheduler.stack() < minstack) {
-        warning("%s: stack decreased from %d to %d\n",module,minstack,Scheduler.stack());
-	minstack=Scheduler.stack();
-    }
-    if (minstack<100) {
-	// Serious problem
-	error("%s: stack overrun: %d remaining\n",module, minstack);
-    }
-    return minstack;
+  // Check amount of stack space remaining
+  if (Scheduler.stack() < minstack) {
+    warning("%s: stack decreased from %d to %d\n", module, minstack, Scheduler.stack());
+    minstack = Scheduler.stack();
+  }
+  if (minstack < 100) {
+    // Serious problem
+    error("%s: stack overrun: %d remaining\n", module, minstack);
+  }
+  return minstack;
 }
 
 void statusLine(const char *line) {
-    SerialUSB.print("** ");
-    SerialUSB.println(line);
+  SerialUSB.print("** ");
+  SerialUSB.println(line);
 #ifdef EXTERNALBLE
-    if (bleconnected) {
-	SerialBLE.println(line);
-    }
+  if (bleconnected) {
+    SerialBLE.println(line);
+  }
 #endif
 }
 
 void statusReport(void) {
-    // Generate a status report at regular intervals
-    static unsigned long lastReport=0;
-    if (millis() - lastReport > 10000) {
+  // Generate a status report at regular intervals
+  static unsigned long lastReport = 0;
+  if (millis() - lastReport > 10000) {
 #ifdef EXTERNALBLE
-	if (bleconnected)
-	    SerialBLE.println("--------------------");
+    if (bleconnected)
+      SerialBLE.println("--------------------");
 #endif
-	sprintf(fmtbuf,"{\"devAddr\":\"%s\",\"frame\":[%d,%d],\"date\":\"%d/%d/%d %02d:%02d:%02d\",",devAddr,ulcntr,dlcntr,month(),day(),year(),hour(),minute(),second()); statusLine(fmtbuf);
-	sprintf(fmtbuf,"\"DR\":%d,\"margin\":%d,\"LCR\":%d,\"lastLCR\":%d,\"RSSI\":%d,\"SNR\":%.1f,\"lastSNR\":%d,",currentDR, gwmargin, pendingLCR, (millis()-lastLCR)/1000,lastRSSI,lastSNR,(millis()-lastReceived)/1000);statusLine(fmtbuf);
-	sprintf(fmtbuf,"\"target\":%d,\"tgtdist\":%.0f,\"tgtheading\":%.0f,\"tgtage\":%d,", currentTarget, targets[currentTarget].getDistance(), targets[currentTarget].getHeading(),targets[currentTarget].getAge()); statusLine(fmtbuf);
-	long lat, lon;   unsigned long age;
-	gps.get_position(&lat,&lon,&age);
-	sprintf(fmtbuf,"\"myage\":%d,\"nsat\":%d,",age/1000,gps.satellites()); statusLine(fmtbuf);
-	//	sprintf(fmtbuf,"\"acc\":[%d,%d,%d],\"heading\":%.0f}",imu.acc_x,imu.acc_y,imu.acc_z,imu.getHeading()); 
-	//	statusLine(fmtbuf);
-	lastReport=millis();
-    }
+    sprintf(fmtbuf, "{\"devAddr\":\"%s\",\"frame\":[%d,%d],\"date\":\"%d/%d/%d %02d:%02d:%02d\",", devAddr, ulcntr, dlcntr, month(), day(), year(), hour(), minute(), second()); statusLine(fmtbuf);
+    sprintf(fmtbuf, "\"DR\":%d,\"margin\":%d,\"LCR\":%d,\"lastLCR\":%d,\"RSSI\":%d,\"SNR\":%.1f,\"lastSNR\":%d,", currentDR, gwmargin, pendingLCR, (millis() - lastLCR) / 1000, lastRSSI, lastSNR, (millis() - lastReceived) / 1000); statusLine(fmtbuf);
+    sprintf(fmtbuf, "\"target\":%d,\"tgtdist\":%.0f,\"tgtheading\":%.0f,\"tgtage\":%d,", currentTarget, targets[currentTarget].getDistance(), targets[currentTarget].getHeading(), targets[currentTarget].getAge()); statusLine(fmtbuf);
+    long lat, lon;   unsigned long age;
+    gps.get_position(&lat, &lon, &age);
+    sprintf(fmtbuf, "\"myage\":%d,\"nsat\":%d,", age / 1000, gps.satellites()); statusLine(fmtbuf);
+    //	sprintf(fmtbuf,"\"acc\":[%d,%d,%d],\"heading\":%.0f}",imu.acc_x,imu.acc_y,imu.acc_z,imu.getHeading());
+    //	statusLine(fmtbuf);
+    lastReport = millis();
+  }
 }
 
 void setup(void) {
@@ -127,8 +127,8 @@ void setup(void) {
 #ifdef EXTERNALBLE
   notice("External BLE\n");
   blesetup();
-#endif	
-  
+#endif
+
   imu.setup();
   needle.setup();
   gpssetup();
@@ -140,24 +140,24 @@ void setup(void) {
   pinPeripheral(PIN_SERIALEXT_TX, PIO_SERCOM);
 
   initTargets();
-  
+
   if (imu.haveimu)
-      Scheduler.startLoop(imuloop,2048);
+    Scheduler.startLoop(imuloop, 2048);
 #ifndef IMUTEST
-  Scheduler.startLoop(needleloop,2048);
+  Scheduler.startLoop(needleloop, 2048);
   Scheduler.startLoop(gpsloop);
-  Scheduler.startLoop(lorawanloop,2048);  // Needs more than 1024 bytes of stack space or sprintf causes problem
+  Scheduler.startLoop(lorawanloop, 2048); // Needs more than 1024 bytes of stack space or sprintf causes problem
   Scheduler.startLoop(loadmonitorloop);
 #ifdef EXTERNALBLE
-  Scheduler.startLoop(bleloop,2048);
+  Scheduler.startLoop(bleloop, 2048);
 #endif
 #endif
 }
 
 void loop(void) {
-    cmdread();
+  cmdread();
 #ifndef IMUTEST
-    statusReport();
-#endif	
-    yield(); 
+  statusReport();
+#endif
+  yield();
 }
