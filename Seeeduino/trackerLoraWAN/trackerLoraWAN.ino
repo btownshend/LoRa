@@ -110,13 +110,20 @@ void statusReport(void) {
   }
 }
 
+// Override _putchar from the printf library so it sends to SerialUSB (printf_init doesn't work for some reason)
+extern "C" void _putchar(char character)
+{
+  SerialUSB.print(character);
+}
+
+
+
 void setup(void) {
   SerialUSB.begin(115200);
 
   delay(2000);
   SerialUSB.println("TrackerLoraWAN");
-
-  notice("Logging on (float: %f)\n",3.14f);
+  printf("Log Level: %d\n",logLevel);
 
 #ifdef EXTERNALGPS
   notice("External GPS\n");
