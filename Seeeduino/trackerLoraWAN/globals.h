@@ -55,10 +55,10 @@ const int pin_battery_voltage = A4;
 #define MOTOR_2A 11
 #define MOTOR_2B 5
 
-#define PIN_STEPPER1  MOTOR_2A
-#define PIN_STEPPER2  MOTOR_2B
-#define PIN_STEPPER4  MOTOR_1B
-#define PIN_STEPPER3  MOTOR_1A
+#define PIN_STEPPER1  MOTOR_1A
+#define PIN_STEPPER2  MOTOR_1B
+#define PIN_STEPPER4  MOTOR_2B
+#define PIN_STEPPER3  MOTOR_2A
 
 // Grove connector serial
 #define PIN_SERIALEXT_RX 24 
