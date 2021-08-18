@@ -14,25 +14,24 @@ void setup() {
   delay(5000);
   SerialUSB.println("starting test");
 }
-#define PERIOD 2000
+#define PERIOD 500
 
 void loop()
 {
   pinMode(OS_EN_L, OUTPUT);
   digitalWrite(OS_EN_L, LOW);
-  delay(PERIOD);
+  delay(1);
   int os1 = analogRead(OS_OUTPUT);  // With LED enabled
   digitalWrite(OS_EN_L, HIGH);
-  delay(PERIOD);
+  delay(1);
   int os2 = analogRead(OS_OUTPUT); // LED off
-
   pinMode(OS_EN_L,INPUT);
-  delay(PERIOD);
-  int os3 = analogRead(OS_OUTPUT); // LED off
 
   SerialUSB.print(os1);
   SerialUSB.print(",");
   SerialUSB.print(os2);
-  SerialUSB.print(",");
-  SerialUSB.println(os3);
+  SerialUSB.print(" -> ");
+  SerialUSB.println(os2-os1);
+
+  delay(PERIOD);
 }
