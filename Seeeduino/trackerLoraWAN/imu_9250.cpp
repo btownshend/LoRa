@@ -16,7 +16,10 @@ FlashStorage(calStorage, magCalType);
 static magCalType magCal;
 IMU imu;
 
-//#define LAYFLAT
+#ifdef PROTOBOARD
+#define LAYFLAT
+#endif
+
 #define NWU  // Assume NED or NWU orientation of axes
 
 static void NED2NWU(float &x, float &y, float &z) {
@@ -235,7 +238,15 @@ void IMU::updateCalibration(void) {
 float IMU::getHeading(void) {
     // Get current heading in degrees
     const float declination = -6;   // Magnetic declination
+#ifdef SEEEDUINOBOARD
     const float correction = 110;   // Adjustment to have needle point in correct direction (why?)
+#elif defined(PROTOBOARD)
+    const float correction = 90;   // Adjustment to put North in correct direction (relative angle between true compass and sensor direction) +ve values shift needle CCW  -- unclear why this isn't 0
+    // Perhaps calibration also rotates magnetic axis?
+    // Note: comparing against iPhone set to display TRUE North (in settings)
+#else
+#error Board not specified
+#endif
     float hd=360-filter.getYaw()+declination+correction;
     while (hd>360) hd-=360;
     
@@ -273,11 +284,20 @@ void IMU::loop() {
 
 	imu.update(UPDATE_COMPASS);
 	updateCalibration();
-	// Assuming the board lays flat on earth, with grove connector at North end, then accel/gyro or ENU and mag is NED
+	// Assuming the board lays flat on earth, with grove connector (or optical sensor) at North end, then accel/gyro or ENU and mag is NED
 	// Convert to dimensioned units and align mag with accel,gyro (ENU)
+#ifdef SEEEDUINOBOARD
 	fgx=imu.calcGyro(imu.gx); fgy=imu.calcGyro(imu.gy); fgz=imu.calcGyro(imu.gz);
 	fax=imu.calcAccel(imu.ax);  fay=imu.calcAccel(imu.ay); faz=imu.calcAccel(imu.az);
 	fmx=imu.calcMag(mag_y);  fmy=imu.calcMag(mag_x); fmz=imu.calcMag(-mag_z);  // Use the calibrated mag values
+#elif defined(PROTOBOARD)
+	// Protoboard as built is WSU for gyro/acc and SWD for mag  -> convert all to ENU
+	fgx=-imu.calcGyro(imu.gx); fgy=-imu.calcGyro(imu.gy); fgz=imu.calcGyro(imu.gz);
+	fax=-imu.calcAccel(imu.ax);  fay=-imu.calcAccel(imu.ay); faz=imu.calcAccel(imu.az);
+	fmx=-imu.calcMag(mag_y);  fmy=-imu.calcMag(mag_x); fmz=imu.calcMag(-mag_z);  // Use the calibrated mag values
+#else
+#error Board not defined
+#endif
 	// All 3 now point the same way as accel/gyro, which is ENU when laying flat (N long way toward grove connector)
 #ifndef LAYFLAT
 	// On its side so world x=x, world y=z, world z=-y 
