@@ -117,7 +117,7 @@ void Needle::adjuststepper(void) {
 }
 
 void Needle::setup(void) {
-    const int maxspeed=1200; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s
+    const int maxspeed=1200/2; // X27.168 spec says maximum speed is 600 deg/s -> 1200 step/s
     const int maxaccel=1200;    // maxspeed/maxaccel gives time to reach full speed
     stepper.setMaxSpeed(maxspeed);  
     stepper.setAcceleration(maxaccel);   // Acceleration tuned for the right "look" (4000 step/s/s will get it up to vmax after rotating 90 deg, but seems to lose steps then)
