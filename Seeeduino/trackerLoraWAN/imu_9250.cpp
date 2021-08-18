@@ -43,8 +43,10 @@ void IMU::setup() {
     notice("imusetup\n");
     delay(100);
     
+#ifdef SEEEDUINOBOARD
     // Enable Grove connectors
     digitalWrite(38, HIGH);
+#endif
 
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
