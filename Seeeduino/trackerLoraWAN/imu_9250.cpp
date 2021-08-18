@@ -389,11 +389,28 @@ void IMU::command(const char *cmd) {
 	monitor(true);
     } else if (strncmp(cmd,"MAGSET",6)==0) {
 	float offset[3], mat[3][3];
-	int nr=sscanf(cmd,"MAGSET %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
-		      &magCal.offset[0],&magCal.offset[1],&magCal.offset[2],
-		      &magCal.mat[0][0],&magCal.mat[0][1],&magCal.mat[0][2],
-		      &magCal.mat[1][0],&magCal.mat[1][1],&magCal.mat[1][2],
-		      &magCal.mat[2][0],&magCal.mat[2][1],&magCal.mat[2][2]);
+	char *p=strtok((char *)&cmd[6],",");
+	int nr=0;
+	while (p && nr<12) {
+	    float val=atof(p);
+	    p=strtok(NULL,",");
+	    notice("v[%d]=%f, ",nr,val);
+	    if (nr <3)
+		magCal.offset[nr]=val;
+	    else if (nr<6)
+		magCal.mat[0][nr-3]=val;
+	    else if (nr<9)
+		magCal.mat[1][nr-6]=val;
+	    else
+		magCal.mat[2][nr-9]=val;
+	    nr++;
+	}
+	notice(" nr=%d\n",nr);
+	// int nr=sscanf(cmd,"MAGSET %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+	// 	      &magCal.offset[0],&magCal.offset[1],&magCal.offset[2],
+	// 	      &magCal.mat[0][0],&magCal.mat[0][1],&magCal.mat[0][2],
+	// 	      &magCal.mat[1][0],&magCal.mat[1][1],&magCal.mat[1][2],
+	// 	      &magCal.mat[2][0],&magCal.mat[2][1],&magCal.mat[2][2]);
 	if (nr==12) {
 	    calStorage.write(magCal);
 	    SerialUSB.println("MAGSET ok");
