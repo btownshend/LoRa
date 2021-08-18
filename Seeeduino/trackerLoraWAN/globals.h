@@ -44,15 +44,21 @@ const int pin_battery_voltage = A4;
 // -----------------  New custom board ----------------
 #define SerialGPS Serial1
 #define SerialLoRa Serial
-#define IMU_9250 1
+#define IMU_9250
 
 // Pin usage
-#define PIN_SENSOR 17  // Sensor for IR detector for needle
+#define OS_OUTPUT 17 // analog read
+#define OS_EN_L  18 // enable LED emitter when low
 
-#define PIN_STEPPER1  12   // MOTOR_1A
-#define PIN_STEPPER2  10   // MOTOR_1B
-#define PIN_STEPPER3  5   // MOTOR_2B
-#define PIN_STEPPER4  11   // MOTOR_2A
+#define MOTOR_1A 12
+#define MOTOR_1B 10
+#define MOTOR_2A 11
+#define MOTOR_2B 5
+
+#define PIN_STEPPER1  MOTOR_2A
+#define PIN_STEPPER2  MOTOR_2B
+#define PIN_STEPPER4  MOTOR_1B
+#define PIN_STEPPER3  MOTOR_1A
 
 // Grove connector serial
 #define PIN_SERIALEXT_RX 24 
