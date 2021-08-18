@@ -59,8 +59,8 @@ const int pin_battery_voltage = A4;
 #define PIN_SERIALEXT_TX 23
 
 // battery of Seeeduino LoRaWAN
-const int PIN_BATT_MEAS = A0;
-const int PIN_BATT_MEAS_EN = A5;
+const int PIN_BATT_MEAS = A5;
+const int PIN_BATT_MEAS_EN = A0;
 
 #else
 // --------------------------------------------------------------
