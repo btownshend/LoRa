@@ -22,7 +22,8 @@ void setup()
 {
     pinMode(E5_RESET,OUTPUT);
     digitalWrite(E5_RESET,HIGH);
-    SerialE5.begin(115200);   // Assuming baud rate already changed, default is 9600 for new boards
+    //SerialE5.begin(9600);   // Assuming baud rate already changed, default is 9600 for new boards
+        SerialE5.begin(115200);   // Assuming baud rate already changed, default is 9600 for new boards
     SerialUSB.begin(115200);
     for (int i = 0; i < 5; i++) {
 	SerialUSB.print(i, DEC);
