@@ -165,7 +165,7 @@ int Needle::getsensor(void) {
 void Needle::sensorcheck(void) {
     // Check sensor
 
-    int position=((stepper.currentPosition()-NORTHOFFSET)/(STEPSPERREV/360))%360;
+    int position=((stepper.currentPosition()-SENSOROFFSET)/(STEPSPERREV/360))%360;
     while (position<0)
 	position+=360;
 
@@ -214,7 +214,7 @@ void Needle::sensorcheck(void) {
 	if (abs(peakpos)>5)
 	    warning("**** PEAK SHIFT: %d\n",peakpos);
 	
-	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360+NORTHOFFSET);
+	stepper.setCurrentPosition(stepper.currentPosition()-peakpos*STEPSPERREV/360+SENSOROFFSET);
 	// Clear for another go
 	for (int i=0;i<360;i++) 
 	    sensorVals[i]=-1;   
