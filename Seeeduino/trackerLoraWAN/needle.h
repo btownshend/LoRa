@@ -8,6 +8,7 @@ class Needle  {
     int sensorVals[360];   // Sensor values for each angle
     int maxPos;  // Current angle with maximum sensor reading
     int spinning;  // Number of rotations of needle to make
+    unsigned long lockUntil;  // Don't update needle position until this time in millis()
     bool fieldtesting;  // True when testing field - disable stepping
     bool enabled;
  public:

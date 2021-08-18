@@ -95,6 +95,13 @@ void Needle::adjuststepper(void) {
     if (spinning>0 || fieldtesting) {
 	return;  // No adjustments while spinning
     }
+    if (lockUntil>millis()) {
+	return;   // No adjustment when locked
+    }
+    if (lockUntil>0) {
+	warning("Unlocked needle\n");
+	lockUntil=0;
+    }
     if (uiactive()) {
 	gotoangle(getuipos());
     } else {
@@ -314,6 +321,11 @@ void Needle::command(const char *cmd) {
     if (cmd[0]=='d' || cmd[0]=='D') {
 	dumpsensor();
 	SerialUSB.println("");
+    } else if (cmd[0]=='m' || cmd[0]=='M') {
+	int pos=atoi(&cmd[1]);
+	lockUntil=millis()+5000;
+	notice("Goto angle %d and lock needle until %ld\n", pos, lockUntil);
+	gotoangle(pos);
     } else if (cmd[0]=='s' || cmd[0]=='S') {
 	spinning=2;
 	SerialUSB.println("Spinning");
@@ -322,6 +334,6 @@ void Needle::command(const char *cmd) {
 	SerialUSB.println("Field measurement");
 	stepperfield();
     } else {
-	warning("Expected ND, NS, or NF");
+	warning("Expected ND, NM, NS, or NF");
     }
 }
