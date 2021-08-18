@@ -21,6 +21,7 @@ class Needle  {
     int lastenabled; // Time (msec) that stepper was last enabled
  private:
     void dumpsensor(void);
+    int getsensor(void);
     void sensorcheck(void);
     void stepperfield(void);
     void gotoangle(float angle);

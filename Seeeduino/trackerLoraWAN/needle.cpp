@@ -133,6 +133,35 @@ void Needle::dumpsensor(void) {
     }
 }
 
+int Needle::getsensor(void) {
+#ifdef SEEEDUINOBOARD
+    analogRead(PIN_SENSOR);
+#elif defined(PROTOBOARD)
+    pinMode(OS_EN_L, OUTPUT);
+    digitalWrite(OS_EN_L, LOW);
+    delayMicroseconds(1);
+    int os1 = analogRead(OS_OUTPUT);  // With LED enabled
+    digitalWrite(OS_EN_L, HIGH);
+    delayMicroseconds(1);
+    int os2 = analogRead(OS_OUTPUT); // LED off
+    pinMode(OS_EN_L,INPUT);
+    int val=os2-os1;
+    static float background=15;
+    if (val<30 ) {  // Background is typical ~15
+	static float lastbg=0;
+	background=background*0.999+val*0.001;
+	if (fabs(background-lastbg)>1) {
+	    lastbg=background;
+	    notice("Sensor background now %.0f\n",background);
+	}
+    }
+    val-=int(background+0.5);
+    return val>0?val:0;
+#else
+#error BOARD not defined
+#endif
+}
+			    
 void Needle::sensorcheck(void) {
     // Check sensor
 
@@ -147,7 +176,7 @@ void Needle::sensorcheck(void) {
 	    verbose("Sensed %d positions\n",nfound);
 	}
     }
-    sensorVals[position]=analogRead(PIN_SENSOR);
+    sensorVals[position]=getsensor(); 
     if (spinning>0 && stepper.distanceToGo()<20)
 	move(20);
     
