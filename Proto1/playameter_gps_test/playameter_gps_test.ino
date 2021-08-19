@@ -27,15 +27,19 @@ void setup() {
 
 void loop()
 {
-  //delay(1000);
-  //SerialUSB.println("tick");
   digitalWrite(LED_PIN, digitalRead(GPS_PPS));
 
-  if (Serial1.available() > 0)
-  {
-    //SerialUSB.println("available");
-    while (Serial1.available() > 0)
+  while (Serial1.available() > 0) {
       SerialUSB.write(Serial1.read());
   }
-  delay(500);
+  while (SerialUSB.available() > 0) {
+      int c=SerialUSB.read();
+      if (c=='@') { 
+	  SerialUSB.println("RESET");
+	  digitalWrite(GPS_RESET_N,LOW);
+	  delay(100);
+	  digitalWrite(GPS_RESET_N,HIGH);
+      } else
+	  Serial1.write(c);
+  }
 }
