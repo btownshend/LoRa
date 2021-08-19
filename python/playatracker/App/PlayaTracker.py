@@ -30,12 +30,13 @@ class PlayaTracker:
         self.client.loop_start()
 
     def initMongo(self):
-        self.client = MongoClient("mongodb+srv://admin:admin@test.7eofe.mongodb.net/Test?retryWrites=true&w=majority")
-        print(self.client)
-        self.db = self.client.Test
-        print(self.db)
-        self.mqttdata = self.db.mqttdata
-        print(self.mqttdata)
+        if False:
+            self.client = MongoClient("mongodb+srv://admin:admin@test.7eofe.mongodb.net/Test?retryWrites=true&w=majority")
+            print(self.client)
+            self.db = self.client.Test
+            print(self.db)
+            self.mqttdata = self.db.mqttdata
+            print(self.mqttdata)
 
     def sendmessage(self, devEUI, fPort, payload, confirmed=False):
         topic = f"application/{self.appID}/device/{devEUI}/tx"
@@ -95,29 +96,30 @@ class PlayaTracker:
                 return
         j['topic'] = msg.topic
 
+        collection=None
         if mqtt.topic_matches_sub('application/2/device/+/rx', msg.topic):
             self.rxmessage(j)
-            collection = self.db.rx
+            if self.db: collection = self.db.rx
         elif mqtt.topic_matches_sub('application/2/device/+/tx', msg.topic):
             print("Ignore tx message")
             return
         elif mqtt.topic_matches_sub('application/2/device/+/status', msg.topic):
-            collection = self.db.status
+            if self.db: collection = self.db.status
         elif mqtt.topic_matches_sub('gateway/+/event/stats', msg.topic):
-            collection = self.db.gwstats
+            if self.db: collection = self.db.gwstats
         elif mqtt.topic_matches_sub('gateway/+/event/#', msg.topic):
-            collection = self.db.gwevent
+            if self.db: collection = self.db.gwevent
         elif mqtt.topic_matches_sub('gateway/+/command/#', msg.topic):
-            collection = self.db.gwcommand
+            if self.db: collection = self.db.gwcommand
         elif mqtt.topic_matches_sub('uart/tx', msg.topic):
-            collection = self.db.uarttx
+            if self.db: collection = self.db.uarttx
         elif mqtt.topic_matches_sub('uart/rx', msg.topic):
             print(j)
-            collection = self.db.uartrx
+            if self.db: collection = self.db.uartrx
         else:
             print(f"Unrecognized topic: {msg.topic}")
-            collection = self.db.other
-        result = collection.insert_one(j)
+            if self.db: collection = self.db.other
+        if collection is not None: result = collection.insert_one(j)
         # print(f"{msg.topic} inserted into {collection.name}")
 
     def initMQTT(self):
