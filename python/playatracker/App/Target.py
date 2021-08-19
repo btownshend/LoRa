@@ -26,10 +26,10 @@ class Target:
 
     def dump(self):
         elapsed = (datetime.utcnow() - self.lastmsgtime).total_seconds()
-        print(f"{self.unitNumber} {self.deviceName:20s}: lastseen={elapsed:4.0f} frame {self.fCnt:5d} tracking {self.tracking:1d} bat={self.battery_voltage:5.3f}",end="")
+        print(f"{self.unitNumber} {self.deviceName:20s}: lastseen={elapsed:5.0f}s frame {self.fCnt:5d} tracking {self.tracking:1d} bat={self.battery_voltage:5.3f}",end="")
         if self.lastloc is not None:
             age = (datetime.utcnow() - self.lastloc[2]).total_seconds()
-            print(f" {self.lastloc[0]:8.4f},{self.lastloc[1]:8.4f} age={age:5.0f} ")
+            print(f" {self.lastloc[0]:8.4f},{self.lastloc[1]:8.4f} age={age:5.0f}s")
         else:
             print("")
 
