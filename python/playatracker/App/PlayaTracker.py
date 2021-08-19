@@ -57,6 +57,8 @@ class PlayaTracker:
             targets[devEUI] = Target(self, devEUI)
         targets[devEUI].update(msg)
         gui.trigger.emit()
+        for tgt in targets.values():
+            tgt.dump()
 
     # The callback for when the client receives a CONNACK response from the server.
     # noinspection PyUnusedLocal,PyMethodMayBeStatic

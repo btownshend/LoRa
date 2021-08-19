@@ -23,6 +23,15 @@ class Target:
         self.replyInterval = 2  # How many frames received between location replies
         self.unitNumber = None
 
+    def dump(self):
+        elapsed = (datetime.utcnow() - self.lastmsgtime).total_seconds()
+        print(f"{self.unitNumber} {self.deviceName:20s}: lastseen={elapsed:4.0f} frame {self.fCnt:5d} tracking {self.tracking:1d} bat={self.battery_voltage:5.3f}",end="")
+        if self.lastloc is not None:
+            age = (datetime.utcnow() - self.lastloc[2]).total_seconds()
+            print(f" {self.lastloc[0]:8.4f},{self.lastloc[1]:8.4f} age={age:5.0f} ")
+        else:
+            print("")
+
     def update(self, msg):
         # Update state using JSON message
         self.nupdates += 1
