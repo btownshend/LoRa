@@ -105,6 +105,9 @@ class PlayaTracker:
         elif mqtt.topic_matches_sub('application/2/device/+/tx', msg.topic):
             print("Ignore tx message")
             return
+        elif mqtt.topic_matches_sub('application/2/device/+/event/txack', msg.topic):
+            print("Ignore txack message")
+            return
         elif mqtt.topic_matches_sub('application/2/device/+/status', msg.topic):
             if self.db: collection = self.db.status
         elif mqtt.topic_matches_sub('gateway/+/event/stats', msg.topic):
