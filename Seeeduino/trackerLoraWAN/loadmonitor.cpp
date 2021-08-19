@@ -7,7 +7,7 @@ void loadmonitorloop(void) {
     unsigned long now=micros();
 
     unsigned int interval=(unsigned int)(now-lasttime);
-    if (interval>20000) {
+    if (interval>30000) {
 	notice("Long thread loop: %d usec\n",interval);
     }
     
