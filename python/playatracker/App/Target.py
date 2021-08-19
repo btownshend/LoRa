@@ -20,6 +20,7 @@ class Target:
         self.txInfo = None
         self.fCnt = 0
         self.deviceName = "?"
+        self.battery_voltage = 0
         self.replyInterval = 2  # How many frames received between location replies
         self.unitNumber = None
 
@@ -49,6 +50,8 @@ class Target:
             print(f"lastloc={self.lastloc}")
         if 'tracking' in obj:
             self.tracking = obj['tracking']
+        if 'battery_voltage' in obj:
+            self.battery_voltage = obj['battery_voltage']
         if self.lastloc is not None and self.fCnt % self.replyInterval == 0:  # Only queue up when we get a new frame to avoid a backlog
             self.sendreply()
 
