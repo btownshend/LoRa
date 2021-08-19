@@ -12,7 +12,7 @@ class Target:
     def __init__(self, pt, devEUI):
         self.tracker = pt
         self.devEUI = devEUI
-        self.lastmsgtime = None
+        self.lastmsgtime = datetime.utcnow()
         self.lastloc = None
         self.nupdates = 0
         self.tracking = 0
