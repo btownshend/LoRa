@@ -352,7 +352,9 @@ void processLoRa(char *buf) {
     } else if (strcmp(buf, "+MSGHEX: FPENDING") == 0) {
 	notice("Incoming message\n");
     } else if (strncmp(buf, "+MSGHEX: RXWIN", 14) == 0) {
-	int nm=sscanf(buf,"+MSGHEX: RXWIN1, RSSI %d, SNR %f",&lastRSSI,&lastSNR);
+	int intSNR,fracSNR;
+	int nm=sscanf(buf,"+MSGHEX: RXWIN1, RSSI %d, SNR %d.%d",&lastRSSI,&intSNR,&fracSNR);
+	lastSNR=intSNR+fracSNR/10.0;
 	lastReceived=millis();
 	if (nm!=2)
 	    error("Failed parse of %s\n",buf);
