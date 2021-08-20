@@ -13,6 +13,9 @@ void getgps() {
   static char gpsline[150];
   static unsigned int gpslinelen = 0;
 
+  if (SerialGPS.available() > OVERRUNSIZE)
+      warning("Possible SerialGPS overrun, available=%d\n",SerialGPS.available());
+
   while (SerialGPS.available()) {
     char c = SerialGPS.read();
 

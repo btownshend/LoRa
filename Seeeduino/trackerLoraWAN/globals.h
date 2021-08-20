@@ -95,4 +95,7 @@ extern Uart SerialExt;   // External Serial port (Grove connector on Proto, D4/D
 #define SerialLoRa SerialExt
 #endif
 
+#define OVERRUNSIZE 200   // Log serial input buffers with this many or more characters queued (may indicate an overrun of the input ringbuffer)
+// Note: Modified cores Uart.h and RingBuffer.h to increase buffer size from 64 to 512
+
 #endif /* _GLOBALS_H_ */

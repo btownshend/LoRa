@@ -56,6 +56,9 @@ void bleread() {
     static unsigned int blebuflen = 0;
     static unsigned long lastchar = 0;
     
+    if (SerialBLE.available() > OVERRUNSIZE)
+	warning("Possible SerialBLE overrun, available=%d\n",SerialBLE.available());
+    
     while (SerialBLE.available() && blebuflen < sizeof(blebuf)) {
 	char c = SerialBLE.read();
 	blebuf[blebuflen++] = c;
