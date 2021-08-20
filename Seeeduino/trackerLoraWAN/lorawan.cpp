@@ -110,7 +110,7 @@ void join() {
     notice("ID request initiated\n");
 }
 
-void loraread() {
+void loraread(bool logdata=false) {
     // Parse all available data from LoRa module
     static char lorabuf[200];
     static unsigned int lorabuflen = 0;
@@ -122,7 +122,10 @@ void loraread() {
 	char c = SerialLoRa.read();
 	if (c == '\r') {
 	    lorabuf[lorabuflen] = 0;
-	    trace("<LORA: %s\n",lorabuf);
+	    if (logdata)
+		warning("<LORA (while writing): %s\n",lorabuf);
+	    else
+		trace("<LORA: %s\n",lorabuf);
 #ifdef LORATOBLE
 	    if (bleconnected) {
 		SerialBLE.print("<LORA: ");
@@ -133,6 +136,10 @@ void loraread() {
 	    lorabuflen = 0;
 	} else if (c != '\n' && lorabuflen < sizeof(lorabuf) - 1)
 	    lorabuf[lorabuflen++] = c;
+    }
+    if (logdata && lorabuflen>0) {
+	lorabuf[lorabuflen]=0;
+	warning("LORA received while writing: %s\n",lorabuf);
     }
 }
 
@@ -146,10 +153,13 @@ void lorawrite(const char *str) {
 	warning("*** lorawrite while msgsending is true; clearing\n");
 	msgsending = false;
     }
-
+    // Process any input first
+    if (SerialLoRa.available()) 
+	loraread(true);
+    
     while (islorabusy()) {
-	warning("*** Lora busy with prior command, delaying\n");
-	loraread();
+	warning("*** Lora busy with prior command, delaying send of <%s>\n",str);
+	loraread(true);
 	delay(1);
     }
     SerialLoRa.println(str);
