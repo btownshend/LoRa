@@ -199,9 +199,6 @@ void send() {
     static unsigned char data[100];
     unsigned char *dptr = data;
 
-    // Update counters
-    lorawrite("AT+LW=ULDL");
-    
     if ((int)sizeof(data)-1 < maxmsglen)
 	maxmsglen=sizeof(data)-1;   // Avoid overflows
   
@@ -478,6 +475,8 @@ void lorawanloop(void)
     if (millis() - lastSend > 1000 * updateInterval) {
 	// Time to try sending
 	send();
+	// Update counters
+	lorawrite("AT+LW=ULDL");
     }
 
 
