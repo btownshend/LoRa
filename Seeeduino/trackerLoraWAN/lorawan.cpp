@@ -77,11 +77,14 @@ bool setDR() {
     
     if (newmargin) {
 	tgtDR = currentDR + (gwmargin - installmargin) * 2 / 5;
-	tgtDR = (currentDR+1)%5;   // Hack to collect data for different DR
+	//	tgtDR = (currentDR+1)%5;   // Hack to collect data for different DR
 	newmargin=false;
-    } else if (pendingLCR > 1)
-	tgtDR = currentDR-1;
-    else
+    } else if (pendingLCR > 1) {
+	// Set down the DR for each additional LCR not received
+	tgtDR = (pendingLCR>5)?0:5-pendingLCR;
+	if (tgtDR>currentDR)
+	    tgtDR=currentDR;
+    } else
 	return false;  // No change
 
     if (tgtDR < minDR)
@@ -89,7 +92,7 @@ bool setDR() {
     else if (tgtDR > maxDR)
 	tgtDR = maxDR;
     if (tgtDR != currentDR) {
-	notice( "pendingLCR=%d, margin=%d: changing DR from %d to %d\n", pendingLCR, gwmargin, currentDR, tgtDR);
+	warning( "pendingLCR=%d, margin=%d: changing DR from %d to %d\n", pendingLCR, gwmargin, currentDR, tgtDR);
 	currentDR = tgtDR;
 	sprintf(fmtbuf, "AT+DR=DR%d", currentDR);
 	lorawrite(fmtbuf);
@@ -458,8 +461,8 @@ void lorawanloop(void)
     if (setDR())
 	return;
 
-    // Request line update every 60s (or 5s if we haven't heard from the prior attempts)
-    if (!msgsending && millis() - lastLCR > (60+5*pendingLCR)*1000) {
+    // Request line update every 60s (or 15s if we haven't heard from the prior attempts)
+    if (!msgsending && millis() - lastLCR > (60+15*pendingLCR)*1000) {
 	lorawrite("AT+LW=LCR");
 	pendingLCR++;
 	return;
