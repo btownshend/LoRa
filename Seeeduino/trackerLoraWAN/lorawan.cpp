@@ -355,11 +355,11 @@ void processLoRa(char *buf) {
     } else if (strcmp(buf, "+MSGHEX: FPENDING") == 0) {
 	notice("Incoming message\n");
     } else if (strncmp(buf, "+MSGHEX: RXWIN", 14) == 0) {
-	int intSNR,fracSNR;
+	int intSNR=0,fracSNR=0;
 	int nm=sscanf(buf,"+MSGHEX: RXWIN1, RSSI %d, SNR %d.%d",&lastRSSI,&intSNR,&fracSNR);
 	lastSNR=intSNR+fracSNR/10.0;
 	lastReceived=millis();
-	if (nm!=2)
+	if (nm!=3)
 	    error("Failed parse of %s\n",buf);
     } else if (strcmp(buf, "+MSGHEX: Please join network first") == 0) {
 	warning("*** Not joined\n");
