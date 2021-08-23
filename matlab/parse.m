@@ -6,6 +6,9 @@ function [topic,j]=parse(hours)
   maxdata=3000;
   d=dir('../mqtt/MQTT*.log');
   keep=(now-[d.datenum])*24 <= hours;
+  if ~any(keep)
+    error('No MQTT log files modified in last %d hours',hours);
+  end
   d=d(keep);
   [~,ord]=sort([d.datenum],'asc');
   d=d(ord);
