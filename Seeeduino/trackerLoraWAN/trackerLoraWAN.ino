@@ -143,8 +143,16 @@ void setup(void) {
   lorawansetup();
 
   // Change SerialExt pins to SERCOM (mode C) (AFTER SerialExt.begin)
+#ifdef SEEEDUINOBOARD
   pinPeripheral(PIN_SERIALEXT_RX, PIO_SERCOM);
   pinPeripheral(PIN_SERIALEXT_TX, PIO_SERCOM);
+#endif
+
+#ifdef PROTOBOARD
+  pinPeripheral(PIN_SERIALEXT_RX, PIO_SERCOM_ALT);
+  pinPeripheral(PIN_SERIALEXT_TX, PIO_SERCOM_ALT);
+#endif
+
 
   initTargets();
 
