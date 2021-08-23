@@ -61,6 +61,7 @@ linkaxes(a(:),'x');
 
 for i=1:length(udev)
   nexttile;
+  plotbrc; axis auto;
   sel1=strcmp(udev{i},{loc.deviceName});
   sel=find(sel1 & ([loc.hdop]<=1.3 | isnan([loc.hdop])));
   ds=round(length(sel)/50);
@@ -78,7 +79,7 @@ for i=1:length(udev)
 end
 plot(trimmean(gwlong,50),trimmean(gwlat,50),'ok','Markersize',15,'LineWidth',1,'HandleVisibility','off');
 legend(udev,'location','best');
-axis equal
+%axis equal
 
 % RSSI vs position
 setfig('rssi vs pos');clf;
