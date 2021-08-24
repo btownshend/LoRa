@@ -26,3 +26,5 @@ Seeeduino/libraries/Adafruit_NeoPixel/
 Seeeduino/libraries/Adafruit_AHRS/
 java/eclipse-workspace
 *.pyc
+mqtt/logs/MQTT*
+Seeeduino/libraries/u-blox_GNSS
