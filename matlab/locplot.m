@@ -61,7 +61,9 @@ linkaxes(a(:),'x');
 
 for i=1:length(udev)
   nexttile;
-  plotbrc; axis auto;
+  if any([loc.latitude]>40)
+    plotbrc; axis auto;
+  end
   sel1=strcmp(udev{i},{loc.deviceName});
   sel=find(sel1 & ([loc.hdop]<=1.3 | isnan([loc.hdop])));
   ds=round(length(sel)/50);
@@ -76,9 +78,10 @@ for i=1:length(udev)
   alllong=[loc(sel1).longitude];
   plot(alllong,alllat,'.r');
   plot(meanPos(i,2),meanPos(i,1),'o','MarkerSize',15,'LineWidth',2,'HandleVisibility','off','Color',get(h,'Color'));
+  plot(trimmean(gwlong,50),trimmean(gwlat,50),'ok','Markersize',15,'LineWidth',1,'HandleVisibility','off');
+  title(udev{i});
 end
-plot(trimmean(gwlong,50),trimmean(gwlat,50),'ok','Markersize',15,'LineWidth',1,'HandleVisibility','off');
-legend(udev,'location','best');
+%legend(udev,'location','best');
 %axis equal
 
 % RSSI vs position
@@ -94,6 +97,7 @@ for i=1:length(udev)
   ngrid=20;
   [x,y]=meshgrid(linspace(min(long),max(long),ngrid),linspace(min(lat),max(lat),ngrid));
   z=griddata(long,lat,rssi,x,y,'linear');
+
   C=contour(x,y,z);
   clabel(C);
   xlabel('Longitude');
