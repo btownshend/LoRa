@@ -9,7 +9,7 @@ int nint=0;
 
 void SERCOM4_Handler() {
   SerialExt.IrqHandler();
-  SerialUSB.print("!");
+  //  SerialUSB.print("!");
 }
 
 
@@ -19,8 +19,8 @@ void setup() {
   SerialExt.begin(9600);
 
   // Change SerialExt pins to SERCOM (mode C) (AFTER SerialExt.begin)
-  pinPeripheral(PIN_SERIALEXT_RX, PIO_SERCOM);
-  pinPeripheral(PIN_SERIALEXT_TX, PIO_SERCOM);
+  pinPeripheral(PIN_SERIALEXT_RX, PIO_SERCOM_ALT);
+  pinPeripheral(PIN_SERIALEXT_TX, PIO_SERCOM_ALT);
 
   delay(5000);
   SerialUSB.println("starting grove port test");
