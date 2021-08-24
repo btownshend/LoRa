@@ -19,6 +19,8 @@ void setup() {
   batteryCheck();
 }
 
+static int prior[10];
+
 void batteryCheck()
 {
   digitalWrite(BATT_MEAS_EN, HIGH);
@@ -28,9 +30,18 @@ void batteryCheck()
   SerialUSB.print(rd);
   SerialUSB.print(" -> ");
   SerialUSB.print(v);
-  SerialUSB.println(" mV");
+  SerialUSB.print(" mV [");
   digitalWrite(BATT_MEAS_EN, LOW);
-  digitalWrite(LED_PIN,(v>3800)?HIGH:LOW);
+  digitalWrite(LED_PIN,(v>4100)?HIGH:LOW);
+  for (int i=0;i<10;i++) {
+      SerialUSB.print(prior[i]);
+      if (i<9) {
+	  prior[i]=prior[i+1];
+	  SerialUSB.print(",");
+      }
+  }
+  prior[9]=v;
+  SerialUSB.println("]");
 }
 
 void loop()
