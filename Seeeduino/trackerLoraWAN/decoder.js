@@ -71,6 +71,12 @@ function rakSensorDataDecode(hexStr) {
         myObj.acceleration_z = parseFloat((parseShort(str.substring(12, 16), 16) * 16/32767).toFixed(3));// + "g";//unit:g
         str = str.substring(16);
         break;
+      case 0x0587:// Filtered orientation
+        myObj.heading = parseFloat((parseShort(str.substring(4, 8), 16)).toFixed(1)); // degrees
+        myObj.tilt =  parseFloat((parseShort(str.substring(8, 12), 16)).toFixed(1));// degrees
+        myObj.uprot = parseFloat((parseShort(str.substring(12, 16), 16)).toFixed(1));// degrees
+        str = str.substring(16);
+        break;
       case 0x0402:// air resistance
         myObj.gasResistance = parseFloat((parseShort(str.substring(4, 8), 16) * 0.01).toFixed(2));// + "KΩ";//unit:KΩ
         str = str.substring(8);

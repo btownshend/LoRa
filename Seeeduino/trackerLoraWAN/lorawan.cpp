@@ -271,7 +271,6 @@ void send() {
 	*dptr++ = ((unsigned char *)&bv)[0];
     }
 
-#if 0
     if (imu.haveimu) {
 	if (maxmsglen > 12 + (dptr - data)) {
 	    // magnet x (0x09,0x02)
@@ -288,6 +287,7 @@ void send() {
 	    *dptr++ = ((unsigned char *)&imu.mag_z)[0];
 	}
 
+#if 0
 	if (maxmsglen > 8 + (dptr - data)) {
 	    // accel
 	    *dptr++ = 0x03;  *dptr++ = 0x71;
@@ -309,8 +309,22 @@ void send() {
 	    *dptr++ = ((unsigned char *)&imu.gyro_z)[1];
 	    *dptr++ = ((unsigned char *)&imu.gyro_z)[0];
 	}
-    }
 #endif
+
+	if (maxmsglen > 8 + (dptr - data)) {
+	    // gyro
+	    *dptr++ = 0x05;  *dptr++ = 0x87;
+	    short heading=(int)imu.getHeading();
+	    short  tilt=(int)imu.getTilt();
+	    short uprot=(int)imu.getUpRotation();
+	    *dptr++ = ((unsigned char *)&heading)[1];
+	    *dptr++ = ((unsigned char *)&heading)[0];
+	    *dptr++ = ((unsigned char *)&tilt)[1];
+	    *dptr++ = ((unsigned char *)&tilt)[0];
+	    *dptr++ = ((unsigned char *)&uprot)[1];
+	    *dptr++ = ((unsigned char *)&uprot)[0];
+	}
+    }
     int sendStart = millis();
     loramsg(dptr - data, data);
     lastSend = millis();
