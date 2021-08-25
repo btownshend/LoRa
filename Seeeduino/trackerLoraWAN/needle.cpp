@@ -340,6 +340,6 @@ void Needle::command(const char *cmd) {
 	SerialUSB.println("Field measurement");
 	stepperfield();
     } else {
-	warning("Expected ND, NM, NS, or NF");
+	warning("Expected ND[ump], NM[ove], NS[pin], or NF[ield]");
     }
 }
