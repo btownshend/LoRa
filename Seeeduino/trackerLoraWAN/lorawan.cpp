@@ -115,8 +115,13 @@ void loraread(bool logdata=false) {
     static char lorabuf[200];
     static unsigned int lorabuflen = 0;
 
-    if (SerialLoRa.available() > OVERRUNSIZE)
-	warning("Possible LoRa serial overrun -- avail=%d\n",SerialLoRa.available());
+    static int maxavail=1;
+    
+    int avail=SerialLoRa.available();
+    if (avail > OVERRUNSIZE || avail>=maxavail) {
+	warning("Possible LoRa serial overrun -- avail=%d\n",avail);
+	maxavail=avail;
+    }
     
     while (SerialLoRa.available()) {
 	char c = SerialLoRa.read();
