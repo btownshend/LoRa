@@ -103,7 +103,7 @@ void statusReport(void) {
     sprintf(fmtbuf, "\"target\":%d,\"tgtdist\":%.0f,\"tgtheading\":%.0f,\"tgtage\":%d,", currentTarget, targets[currentTarget].getDistance(), targets[currentTarget].getHeading(), targets[currentTarget].getAge()); statusLine(fmtbuf);
     long lat, lon;   unsigned long age;
     gps.get_position(&lat, &lon, &age);
-    sprintf(fmtbuf, "\"myage\":%d,\"nsat\":%d,", age / 1000, gps.satellites()); statusLine(fmtbuf);
+    sprintf(fmtbuf, "\"myage\":%d,\"nsat\":%d,\"head\":%d", age / 1000, gps.satellites(),(int)imu.getHeading()); statusLine(fmtbuf);
     //	sprintf(fmtbuf,"\"acc\":[%d,%d,%d],\"heading\":%.0f}",imu.acc_x,imu.acc_y,imu.acc_z,imu.getHeading());
     //	statusLine(fmtbuf);
     lastReport = millis();
