@@ -179,13 +179,17 @@ void Needle::sensorcheck(void) {
     while (position<0)
 	position+=360;
 
-    if (sensorVals[position]==-1) {
-	nfound++;
-	if (nfound%10==0) {
-	    verbose("Sensed %d positions\n",nfound);
+    int newval=getsensor();
+    if (newval<0)
+	SerialUSB.println("newval<0");
+    
+    // Cover adjacent ones too
+    for (int i=-2;i<=2;i++) {
+	if (sensorVals[(position+i+360)%360]==-1) {
+	    sensorVals[(position+i+360)%360]=newval;
+	    nfound++;
 	}
     }
-    sensorVals[position]=getsensor(); 
     if (spinning>0 && stepper.distanceToGo()<20)
 	move(20);
     
