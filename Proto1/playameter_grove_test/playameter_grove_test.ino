@@ -5,13 +5,10 @@
 
 // Add SerialExt using SERCOM4 (Grove connector)
 Uart SerialExt( &sercom4, PIN_SERIALEXT_RX, PIN_SERIALEXT_TX, SERCOM_RX_PAD_3, UART_TX_PAD_2 ) ;
-int nint=0;
 
 void SERCOM4_Handler() {
   SerialExt.IrqHandler();
-  //  SerialUSB.print("!");
 }
-
 
 void setup() {
   // put your setup code here, to run once:
@@ -29,15 +26,9 @@ void setup() {
 void loop()
 {
   while (SerialExt.available() > 0) {
-      SerialUSB.print("<");
       SerialUSB.write(SerialExt.read());
   }
   while (SerialUSB.available() > 0) {
-      SerialUSB.print(">");
       SerialExt.write(SerialUSB.read());
-  }
-  if (nint>0) {
-      SerialUSB.println(nint);
-      nint=0;
   }
 }
