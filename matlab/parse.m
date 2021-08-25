@@ -3,7 +3,7 @@ function [topic,j]=parse(hours)
   if nargin<1
     hours=24;
   end
-  maxdata=3000;
+  maxdata=10000;
   d=dir('../mqtt/logs/MQTT*.log');
   keep=(now-[d.datenum])*24 <= hours;
   if ~any(keep)
