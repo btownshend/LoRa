@@ -3,6 +3,7 @@
 class Needle  {
     const int STEPSPERREV = 720;
     const int SENSOROFFSET = 0;   // Offset in steps from sensor-based zero to position with needle point directly over sensor, positive values rotate needle CCWt
+    int nfound=0;   // Number of sensor vals found
 
     AccelStepper stepper;
     int sensorVals[360];   // Sensor values for each angle

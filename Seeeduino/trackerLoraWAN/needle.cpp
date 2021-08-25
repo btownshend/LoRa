@@ -38,6 +38,7 @@ Needle::Needle(void):  stepper(AccelStepper::FULL4WIRE,PIN_STEPPER1,PIN_STEPPER2
     enabled=true; // To match stepper state
     for (int i=0;i<360;i++)
 	sensorVals[i]=-1;
+    nfound=0;
 }
 
 void Needle::enable(void) {
@@ -130,7 +131,9 @@ void Needle::setup(void) {
 }
 
 void Needle::dumpsensor(void) {
-    SerialUSB.print("sensor=[");
+    SerialUSB.print("nfound=");
+    SerialUSB.print(nfound);
+    SerialUSB.print(", sensor=[");
     for (int i=0;i<360;i++) {
 	SerialUSB.print(sensorVals[i]);
 	if (i==359)
@@ -176,7 +179,6 @@ void Needle::sensorcheck(void) {
     while (position<0)
 	position+=360;
 
-    static int nfound=0;
     if (sensorVals[position]==-1) {
 	nfound++;
 	if (nfound%10==0) {
