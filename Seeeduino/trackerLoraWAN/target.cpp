@@ -11,9 +11,10 @@ void initTargets(void) {
     numTargets=MAXTARGETS;
     targets[0].setPosition(90,0,now());  // North pole
     for (int i=1;i<numTargets;i++)
-	targets[i].setPosition(37.44479,-122.17686,now());
+	targets[i].setPosition(90,0,now());  // North pole
+    targets[4].setPosition(40.81045,-119.17505,now());  // The Man
+    targets[5].setPosition(40.8060,-119.1681,now());  // Taziii
     currentTarget = 0;  // Compass
-    currentTarget = 4;  // TODO Testing
 }
 
 float Target::getDistance(void) {  // Get distance from our current position to this target in meters

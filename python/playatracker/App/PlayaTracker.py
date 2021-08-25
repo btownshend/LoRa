@@ -150,6 +150,13 @@ def main():
     t.lastloc=(37.443464, -122.175126, datetime.utcnow())
     targets['creek']=t
 
+    t=Target(pt,'0004')
+    t.deviceName='TheMan4'
+    t.unitNumber=4
+    t.lastloc=(40.81045,-119.17505, datetime.utcnow())
+    targets['theman']=t
+
+    
     sys.exit(app.exec_())
 
 
