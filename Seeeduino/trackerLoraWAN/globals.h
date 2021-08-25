@@ -74,7 +74,7 @@ const int PIN_BATT_MEAS_EN = A0;
 #endif
 
 //#define EXTERNALGPS   // Define to use GPS connected to external serial port
-//#define EXTERNALBLE // BLE Connected
+#define EXTERNALBLE // BLE Connected
 //#define EXTERNALLORA
 
 #if defined(EXTERNALGPS) && defined(EXTERNALBLE)
