@@ -49,11 +49,11 @@ void Target::processMessage(int n, unsigned char *data) {   // Process message f
     lon=parse3(&data[3])/10000.0;
     int age=parse2(&data[6]);
     lastfix=now()-age;
-    notice("Updated target to (%.4f,%.4f) age %d\n", lat, lon, age);
+    notice("Updated target to (%.4f,%.4f) age %ld\n", lat, lon, (long)age);
 }
 
 void Target::dump() {
-    printf("%.4f,%.4f %d sec;  H=%.0f, D=%.0f\n", lat, lon, now()-lastfix,getHeading(),getDistance());
+    printf("%.4f,%.4f %ld sec;  H=%.0f, D=%.0f\n", lat, lon, (long)(now()-lastfix),getHeading(),getDistance());
 }
 
 void targetcommand(const char *cmd) {
