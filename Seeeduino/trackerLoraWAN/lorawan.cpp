@@ -340,6 +340,7 @@ void processMessage(int port, int n, unsigned char *data) {
     notice("processMessage(%d,%d,0x%02x...)\n", port, n, data[0]);
     if (port==1) {
 	int target=data[0];
+	notice("Message to set target %d: ", target);
 	if (target<1 || target>=MAXTARGETS)
 	    warning("Received message with bad target: %d", target);
 	else
