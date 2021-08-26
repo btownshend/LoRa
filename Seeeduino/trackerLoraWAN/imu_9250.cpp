@@ -333,7 +333,7 @@ void IMU::loop() {
 	    imu.computeEulerAngles(true);
 	    notice("IMU:    Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f\n", imu.roll,imu.pitch,imu.yaw);
 #endif
-	    notice("Filter: Roll: %4.0f, Pitch: %4.0f, Yaw: %4.0f, Heading: %.0f, Tilt: %.0f, UpRotation: %.0f\n", filter.getRoll(), filter.getPitch(), filter.getYaw(),getHeading(),getTilt(),getUpRotation());
+	    notice("Filter: Roll: %4d, Pitch: %4d, Yaw: %4d, Heading: %d, Tilt: %d, UpRotation: %d\n", (int)filter.getRoll(), (int)filter.getPitch(), (int)filter.getYaw(),(int)getHeading(),(int)getTilt(),(int)getUpRotation());
 	    nsamps=0;
 	    nyield=0;
 	    lastdbg = millis();
