@@ -7,7 +7,11 @@ import paho.mqtt.client as mqtt
 from pymongo import MongoClient
 from datetime import datetime
 
-from GUI import gui, app
+useGUI = False
+
+if useGUI:
+    from GUI import gui, app
+
 from Target import targets, Target
 
 
@@ -24,7 +28,7 @@ class PlayaTracker:
         self.appID = appID
         self.initMongo()
         self.initMQTT()
-
+        
     def start(self):
         # Start the MQTT handler loop
         self.client.loop_start()
@@ -56,7 +60,8 @@ class PlayaTracker:
             print(f"Adding new devEUI: {devEUI}")
             targets[devEUI] = Target(self, devEUI)
         targets[devEUI].update(msg)
-        gui.trigger.emit()
+        if useGUI:
+            gui.trigger.emit()
         for tgt in targets.values():
             tgt.dump()
 
