@@ -66,5 +66,5 @@ void targetcommand(const char *cmd) {
 	    targets[i].dump();
 	}
     } else
-	warning("Expected TD\n");
+	warning("Expected TD[ump]\n");
 }
