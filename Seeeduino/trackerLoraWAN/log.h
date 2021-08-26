@@ -8,7 +8,7 @@
 #define LOG_LEVEL_TRACE   5
 #define LOG_LEVEL_VERBOSE 6
 
-const int logLevel=LOG_LEVEL_TRACE;
+const int logLevel=LOG_LEVEL_NOTICE;
 const char levelsym[]="SFEWNTV";
 
 inline void logprint(int level,const char *fmt...) {
