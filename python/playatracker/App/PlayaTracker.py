@@ -29,9 +29,12 @@ class PlayaTracker:
         self.initMongo()
         self.initMQTT()
         
-    def start(self):
+    def start(self,forever):
         # Start the MQTT handler loop
-        self.client.loop_start()
+        if forever:
+            self.client.loop_forever()
+        else:
+            self.client.loop_start()
 
     def initMongo(self):
         if False:
@@ -142,7 +145,6 @@ class PlayaTracker:
 
 def main():
     pt = PlayaTracker(2)
-    pt.start()
     # Dummy target for testing
     t=Target(pt,'0006')
     t.deviceName='Draegers6'
@@ -162,8 +164,13 @@ def main():
     targets['theman']=t
 
     
-    sys.exit(app.exec_())
+    if useGUI:
+        pt.start(False)
+        sys.exit(app.exec_())
+    else:
+        pt.start(True)
 
+        
 
 if __name__ == '__main__':
     main()
