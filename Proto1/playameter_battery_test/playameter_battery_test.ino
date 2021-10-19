@@ -32,7 +32,7 @@ void batteryCheck()
   SerialUSB.print(v);
   SerialUSB.print(" mV [");
   digitalWrite(BATT_MEAS_EN, LOW);
-  digitalWrite(LED_PIN,(v>3900)?HIGH:LOW);
+  digitalWrite(LED_PIN,(v>4100)?HIGH:LOW);
   for (int i=0;i<10;i++) {
       SerialUSB.print(prior[i]);
       if (i<9) {
