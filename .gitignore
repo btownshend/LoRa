@@ -28,3 +28,6 @@ java/eclipse-workspace
 *.pyc
 mqtt/logs/MQTT*
 Seeeduino/libraries/u-blox_GNSS
+python/playatracker/.idea/modules.xml
+python/playatracker/.idea/playatracker.iml
+python/playatracker/.idea/vcs.xml

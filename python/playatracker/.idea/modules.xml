@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/playatracker.iml" filepath="$PROJECT_DIR$/.idea/playatracker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../../SynBio/Robot/pyTecan/.idea/pyTecan.iml" filepath="$PROJECT_DIR$/../../../../SynBio/Robot/pyTecan/.idea/pyTecan.iml" />
     </modules>
   </component>
 </project>
