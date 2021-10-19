@@ -194,15 +194,6 @@ void Needle::sensorcheck(void) {
 	move(20);
     
     if (nfound>=360) {
-	if  (nfound>360) {
-	    int check=0;
-	    for (int i=0;i<360;i++)
-		if (sensorVals[i]>=0)
-		    check++;
-	    SerialUSB.print("check=");
-	    SerialUSB.print(check);
-	    SerialUSB.print(", ");
-	}
 	if (spinning>0)
 	    spinning--;
 	unsigned long tic=millis();

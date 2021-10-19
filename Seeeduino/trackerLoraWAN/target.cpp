@@ -45,6 +45,9 @@ void Target::processMessage(int n, unsigned char *data) {   // Process message f
 	warning("Target update message with 1+%d bytes\n",n);
 	return;
     }
+    notice("data[-1:%d]==",n-1);
+    for (int i=-1;i<n;i++)
+	notice("%02x ",data[i]);
     lat=parse3(&data[0])/10000.0;
     lon=parse3(&data[3])/10000.0;
     int age=parse2(&data[6]);

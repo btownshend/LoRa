@@ -337,7 +337,7 @@ void send() {
 }
 
 void processMessage(int port, int n, unsigned char *data) {
-    notice("processMessage(%d,%d,0x%02x...)\n", port, n, data[0]);
+    notice("processMessage(%d,%d,0x%02x,%02x,%02x,...)\n", port, n, data[0],data[1],data[2]);
     if (port==1) {
 	int target=data[0];
 	notice("Message to set target %d: ", target);
