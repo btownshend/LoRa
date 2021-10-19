@@ -3,7 +3,7 @@ function [topic,j]=parse(hours)
   if nargin<1
     hours=24;
   end
-  maxdata=10000;
+  maxdata=100000;
   d=dir('../mqtt/logs/MQTT*.log');
   keep=(now-[d.datenum])*24 <= hours;
   if ~any(keep)
@@ -55,6 +55,12 @@ function [topic,j]=parse(hours)
   topics=unique({j.topic});
   topic=[];
   for i=1:length(topics)
-    topic=[topic,struct('topic',topics{i},'payload',[j(strcmp({j.topic},topics{i})).payload])];
+    ttmp=topic;
+    z=j(strcmp({j.topic},topics{i}));
+    pl=z(1).payload;
+    for k=2:length(z)
+      pl=concatstructs(pl,z(k).payload);
+    end
+    topic=[topic,struct('topic',topics{i},'payload',pl)];
   end
 end

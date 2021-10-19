@@ -1,7 +1,7 @@
 function plotbrc()
 % Plot the background map
 global brc
-if ~exist('brc','var')
+if ~exist('brc','var') || isempty(brc)
   brc=kmz2struct('BRC.kmz');
 end
 sel=find(~strcmp({brc.Geometry},'Point'));

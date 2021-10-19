@@ -2,9 +2,11 @@
 
 % Get gateway avg position
 sel=arrayfun(@(z) isfield(z.payload,'rxInfo'), j);
-gwlat=arrayfun(@(z) z.payload.rxInfo.location.latitude, j(sel));
-gwlong=arrayfun(@(z) z.payload.rxInfo.location.longitude, j(sel));
-
+%gwlat=arrayfun(@(z) z.payload.rxInfo.location.latitude, j(sel));
+%gwlong=arrayfun(@(z) z.payload.rxInfo.location.longitude, j(sel));
+% Force to BM camp location:
+gwlat=40.8064;
+gwlong=-119.1682;
 loc=[];
 t0=now()+7/24;
 for i=1:length(j)
@@ -23,12 +25,12 @@ for i=1:length(j)
     end
   end
 end
-bad=[loc.latitude]<37 | [loc.longitude]>-122;
+bad=[loc.latitude]<37 | [loc.longitude]<-120;
 loc=loc(~bad);
 udev=unique({loc.deviceName});
 
 setfig('location');clf;
-tiledlayout('flow');
+t=tiledlayout('flow');
 a=[];
 for i=1:length(udev)
   nexttile;
@@ -59,6 +61,11 @@ linkaxes(a(:,1),'y');
 linkaxes(a(:,2),'y');
 linkaxes(a(:),'x');
 
+setfig('map');clf;
+t=tiledlayout('flow');
+t.TileSpacing='compact';
+t.Padding='compact';
+a=[];
 for i=1:length(udev)
   nexttile;
   if any([loc.latitude]>40)
@@ -78,9 +85,11 @@ for i=1:length(udev)
   alllong=[loc(sel1).longitude];
   plot(alllong,alllat,'.r');
   plot(meanPos(i,2),meanPos(i,1),'o','MarkerSize',15,'LineWidth',2,'HandleVisibility','off','Color',get(h,'Color'));
-  plot(trimmean(gwlong,50),trimmean(gwlat,50),'ok','Markersize',15,'LineWidth',1,'HandleVisibility','off');
+  %plot(trimmean(gwlong,50),trimmean(gwlat,50),'ok','Markersize',15,'LineWidth',1,'HandleVisibility','off');
   title(udev{i});
+  a=[a,gca];
 end
+linkaxes(a);
 %legend(udev,'location','best');
 %axis equal
 
@@ -106,4 +115,33 @@ for i=1:length(udev)
   plot(long,lat,'or');
   title(sprintf('Position vs RSSI for %s',udev{i}));
 end
+
+% RSSI vs distance
+setfig('rssi vs distance');clf;
+tiledlayout('flow');
+a=[];
+for i=1:length(udev)
+  nexttile;
+  sel1=strcmp(udev{i},{loc.deviceName});
+  sel=find(sel1 & ([loc.hdop]<=1.3 | isnan([loc.hdop])));
+  lat=[loc(sel).latitude];
+  long=[loc(sel).longitude];
+  lat=lat+rand(size(lat))*1e-4-5e-5;
+  long=long+rand(size(long))*1e-4-5e-5;
+  dist=sqrt((lat-median(gwlat)).^2+((long-median(gwlong)).*cosd(lat)).^2)*111132;
+  rssi=[loc(sel).rssi];
+  rssi=rssi+rand(size(rssi))*1-0.5;
+  semilogx(dist,rssi,'.');
+  hold on;
+  sel=dist>60;
+  b=robustfit(log2(dist(sel)),rssi(sel));
+  fprintf('b=[%.4f, %.4f]\n', b);
+  dpts=logspace(min(log10(dist)),max(log10(dist)));
+  plot(dpts,log2(dpts)*b(2)+b(1),'-');
+  xlabel('Distance (m)');
+  ylabel('RSSI');
+  title(sprintf('Distance vs RSSI for %s',udev{i}));
+  a=[a,gca];
+end
+linkaxes(a);
 
