@@ -2,6 +2,8 @@
 #ifdef EXTERNALBLE
 #include "ble.h"
 
+extern void cmdexec(char *buf);
+
 bool bleconnected = true;
 bool inCommandMode = false;
 
@@ -67,6 +69,10 @@ void bleread() {
 
     if ((blebuflen==sizeof(blebuf)) || (blebuflen>0 && (millis()-lastchar)>10)) {
 	bleprocess(blebuf,blebuflen);
+	if (blebuflen>1 && blebuf[0]>='A' && blebuf[0]<='Z') {
+	    blebuf[blebuflen]=0;
+	    cmdexec(blebuf);
+	}
 	blebuflen = 0;
     }
 }
